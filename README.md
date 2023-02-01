@@ -1,6 +1,7 @@
 # 삼정KPMG Ideaton 2023
 
 ## Main
+- 참여자 : 이수민, 김영진, 최윤정, 이금진
 
 ## Project
 - Title: ESG 관련 뉴스에 fine-tuning된 KR-FinBERT 기반 산업 군 내 관련 기업 ESG 사업 활동 분석 플랫폼
