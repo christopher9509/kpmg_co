@@ -19,7 +19,7 @@
 - From : naver news crawling
 
 (2) ESG report(지속가능경영보고서)
-- 추후 ㅈ가성
+- 추후 작성
 
 ## Evaluation
 - Metric: Accuracy, F1 score
