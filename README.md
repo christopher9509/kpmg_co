@@ -9,7 +9,7 @@
 - Tool Used: python, pandas, sklearn, pytorch, streamit, pigma
 
 ## Data
-- target companies = (1) 신세계 (2) 현대홈쇼핑 (3) 롯데홈쇼핑 (4) GS리테일 (5) LG생활건강
+- target companies = (1) 신세계 (2) 현대홈쇼핑 (3) 롯데하이마트 (4) GS리테일 (5) LG생활건강
 - target domain = 
 
 (1) News data
