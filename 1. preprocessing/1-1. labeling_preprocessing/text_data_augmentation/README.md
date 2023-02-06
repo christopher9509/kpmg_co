@@ -2,6 +2,8 @@
 
 * 해당 코드는 https://github.com/jasonwei20/eda_nlp에서 ESG 뉴스 data augmentation을 위해 간단하게 수정한 코드입니다. 하단 내용은 원 출처 내용 그대로 유지했습니다.
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 이 프로젝트는 [EDA: Easy Data Augmentation Techniques for Boosting Performance on Text Classification Tasks](https://github.com/jasonwei20/eda_nlp) 를 한국어로 쓸 수 있도록 wordnet 부분만 교체한 프로젝트 입니다.
 
 wordnet은 KAIST에서 만든 [Korean WordNet(KWN)](http://wordnet.kaist.ac.kr/) 을 사용했습니다.
