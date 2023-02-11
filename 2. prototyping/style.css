@@ -29,7 +29,27 @@
     text-align: center;
 }
 
-#tabs-bui8-tabpanel-0 > div:nth-child(1) > div > div.css-ocqkz7.e1tzin5v4 > div:nth-child(1) > div:nth-child(1) > div{
+/* #tabs-bui8-tabpanel-0 > div:nth-child(1) > div > div.css-ocqkz7.e1tzin5v4 > div:nth-child(1) > div:nth-child(1) > div{
+    background-color: gainsboro;
+    border-radius: 10px;
+} */
+
+#tabs-bui713-tabpanel-0 > div:nth-child(1) > div > div > div:nth-child(2) > div:nth-child(1) > div{
     background-color: gainsboro;
     border-radius: 10px;
 }
+
+#tabs-bui8-tabpanel-0 > div:nth-child(1) > div > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(1) > div > div{
+    background-color: peachpuff;
+    border-radius: 10px;
+}
+
+#tabs-bui8-tabpanel-0 > div:nth-child(1) > div > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(1) > div > div{
+    background-color: peachpuff;
+    border-radius: 10px;
+}
+
+/* div.css-1r6slb0.e1tzin5v2{
+    background-color: peachpuff;
+    border-radius: 10px;
+} */
