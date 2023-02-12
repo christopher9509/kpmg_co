@@ -13,6 +13,15 @@ st.set_page_config(page_title="서비스명", page_icon=None, layout="wide", ini
 with open('style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
+coms = []
+def select_coms(com):
+    coms.append(com)
+
+def reset_coms():
+    coms = []
+
+com = '현대홈쇼핑'
+
 # 해당 디렉토리가 없으면 디렉토리를 만들어주는 함수
 def make_dir(path):
     if not os.path.exists(path):
@@ -42,159 +51,149 @@ c1 = st.empty()
 #     image = Image.open(com+'.jpg')
 #     st.image(image)
 
-tab1, tab2 = st.tabs(["공시분석", "뉴스분석"])
+##### Font Style #####
+c_style = ("text-align:left; padding: 0px; font-family: arial black; font-size: 70%")
+t_style = ("text-align:center; padding: 0px; font-family: arial black; font-size: 160%")
+b_style = ("text-align:center; padding: 0px; font-family: arial black; font-size: 110%; font-weight: 900;")
+p_style = ("text-align:left; padding: 0px; font-family: Noto Sans KR; font-size: 100%; font-weight: 500; line-height: 1.5")
+#####
 
+##### Sidebar #####
 with st.sidebar:
     st.text('서비스명')
     st.radio('뷰티인사이드', ('자사 분석', '산업군 분석'))
+#####
 
+##### Layout #####
+tab1, tab2 = st.tabs(["공시분석", "뉴스분석"])
+with tab1:
+    st.write(f"<h5 style='{c_style}'>2021 지속가능경영보고서, 2022.07.04 기준</h5>", unsafe_allow_html = True)
+    st.write(f"<h5 style='{t_style}'><br>현대홈쇼핑 ESG 사업 요약</h5>", unsafe_allow_html = True)
+    tab_e, tab_s, tab_g = tab1.tabs(["&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;"])
+    st.write(f"<h5 style='{t_style}'><br><br>지속가능경영보고서, 지배구조보고서<br><br></h5>", unsafe_allow_html = True)
+    c1, c2 = st.columns([1.5,1])
+    st.write(f"<h5 style='{t_style}'><br><br>ESG 키워드<br></h5>", unsafe_allow_html = True)
+    c3, c4 = st.columns([1,1])
+#####
 
-tab1.write('2021 지속가능경영보고서, 2022.07.04 기준')
-# tab1.markdown("<center><h3><code>현대홈쇼핑</code> ESG 사업 요약</h3></center>", True)
-tab1.markdown(f"<center><h3>현대홈쇼핑 ESG 사업 요약</h3></center>", True)
-
-tab_e, tab_s, tab_g = tab1.tabs(["&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;"])
-
+##### Directory error handling #####
 path = '../1. preprocessing/1-2. ESG report/'
 make_dir(path)
 make_dir(path+'output/')
 make_dir(path+'esg_report/')
+make_dir(path+'esg_report/'+com+'/')
+#####
 
+
+##### Data Loading #####
 dir = path + 'output/summarized_hyundaehomeshopping_2023.csv'
-df = pd.read_csv(dir)
-
+# o_sum : 공시 사업요약
+o_sum = pd.read_csv(dir)
+e_o_sum = o_sum[o_sum['label']=='e']
+s_o_sum = o_sum[o_sum['label']=='s']
+s_o_sum = s_o_sum.reset_index(drop=True)
+g_o_sum = o_sum[o_sum['label']=='g']
+g_o_sum = g_o_sum.reset_index(drop=True)
+# o_files : 공시 파일 리스트 (로컬 저장된)
+o_files = [f for f in os.listdir(path+'esg_report/'+com+'/') if f.startswith('_기존_')]
+##### Tab1_공시분석 #####
 with tab_e:
-    e_df = df[df['label']=='e']
-    if e_df.empty:
-        tab1.tab_s.write('E와 관련된 활동 키워드가 없습니다.')
+    if e_o_sum.empty:
+        st.write(f"<h5 style='{p_style}'><br>'E와 관련된 활동 키워드가 없습니다.'<br><br></h5>", unsafe_allow_html = True)
     else:
-        c1, c2, c3 = st.columns([1,1,1])
-        # with c1.expander(e_df.iloc[0,0]):
-        #     st.write(e_df.iloc[0,1])
-        # with c2.expander(e_df.iloc[1,0]):
-        #     st.write(e_df.iloc[1,1])
-        # with c3.expander(e_df.iloc[2,0]):
-        #     st.write(e_df.iloc[2,1])
-        # with c1.expander(e_df.iloc[3,0]):
-        #     st.write(e_df.iloc[3,1])
-        # with c2.expander(e_df.iloc[4,0]):
-        #     st.write(e_df.iloc[4,1])
-        # with c3.expander(e_df.iloc[5,0]):
-        #     st.write(e_df.iloc[5,1])
-        c1.markdown(f"<center><h5><code>{e_df.iloc[0,0]}</code></h5></center>", True)
-        c1.write(e_df.iloc[0,1])
-        c2.markdown(f"<center><h5>{e_df.iloc[1,0]}</h5></center>", True)
-        # c2.write(e_df.iloc[1,0])
-        c2.write(e_df.iloc[1,1])
-        c3.markdown(f"<center><h5>{e_df.iloc[2,0]}</h5></center>", True)
-        c3.write(e_df.iloc[2,1])
-        c4,c5,c6 = st.columns([1,1,1])
-        c4.write(e_df.iloc[3,0])
-        c4.write(e_df.iloc[3,1])
-        c5.write(e_df.iloc[4,0])
-        c5.write(e_df.iloc[4,1])
-        c6.write(e_df.iloc[5,0]) 
-        c6.write(e_df.iloc[5,1])
+        ce0, ce1, ce2 = st.columns([1,1,1])
+        ce3, ce4, ce5 = st.columns([1,1,1])
+        for i in range(6):
+            if len(e_o_sum)>i:
+                globals()[f'ce{i}'].write(f"<h5 style='{b_style}'><strong>{e_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'ce{i}'].write(f"<h5 style='{p_style}'><br>{e_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
     with st.expander("더보기"):
-        left = len(e_df)-6
+        left = len(e_o_sum)-6
         for i in range(left//3+1):
-            globals()[f"c_{i+2}0"], globals()[f"c_{i+2}1"], globals()[f"c_{i+2}2"] = st.columns([1,1,1])
-        for i, item in e_df.iterrows():
+            globals()[f"ce_{i+2}0"], globals()[f"ce_{i+2}1"], globals()[f"ce_{i+2}2"] = st.columns([1,1,1])
+        for i, item in e_o_sum.iterrows():
             if i<6:
                 continue
             else:
-                globals()[f"c_{i//3}{i%3}"].write(e_df.iloc[i,0])
-                globals()[f"c_{i//3}{i%3}"].write(e_df.iloc[i,1])
-        # c1, c2, c3= st.columns([1,1,1])
-        # # c1.text_area(e_df.iloc[0,0], value=e_df.iloc[0,1])
-        # c1.write(e_df.iloc[0,0])
-        # c1.write(e_df.iloc[0,1])
-        # # c1.metric(e_df.iloc[0,0], e_df.iloc[0,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-        # c2.write(e_df.iloc[1,0])
-        # c2.write(e_df.iloc[1,1])
-        # c3.write(e_df.iloc[2,0]) 
-        # c3.write(e_df.iloc[2,1])
+                globals()[f'ce_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{e_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'ce_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{e_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
 
 with tab_s:
-    s_df = df[df['label']=='s']
-    # s_df.reset_index(inplace=True, drop=True)
-    # if s_df.empty:
-    #     tab1.tab_s.write('S와 관련된 활동 키워드가 없습니다.')
-    # else:
-    #     c1, c2, c3, c4, c5 = st.columns([1,1,1,1,0.4])
-    #     s_df = df[df['label']=='s']
-    #     c1.text_area(s_df.iloc[0,0], value=s_df.iloc[0,1])
-    #     # c1.write(s_df.iloc[0,0])
-    #     # c1.write(s_df.iloc[0,1])
-    #     # c1.metric(s_df.iloc[0,0], s_df.iloc[0,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c2.metric(s_df.iloc[1,0], s_df.iloc[1,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c3.metric(s_df.iloc[2,0], s_df.iloc[2,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c4.metric(s_df.iloc[3,0], s_df.iloc[3,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c5.button("더보기",key='s_more')
+    if s_o_sum.empty:
+        st.write(f"<h5 style='{p_style}'><br>'E와 관련된 활동 키워드가 없습니다.'<br><br></h5>", unsafe_allow_html = True)
+    else:
+        cs0, cs1, cs2 = st.columns([1,1,1])
+        cs3, cs4, cs5 = st.columns([1,1,1])
+        for i in range(6):
+            if len(s_o_sum)>i:
+                globals()[f'cs{i}'].write(f"<h5 style='{b_style}'><strong>{s_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'cs{i}'].write(f"<h5 style='{p_style}'><br>{s_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
+    with st.expander("더보기"):
+        left = len(s_o_sum)-6
+        for i in range((left//3)+1):
+            globals()[f"cs_{i+2}0"], globals()[f"cs_{i+2}1"], globals()[f"cs_{i+2}2"] = st.columns([1,1,1])
+        for i, item in s_o_sum.iterrows():
+            if i<6:
+                continue
+            else:
+                globals()[f'cs_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{s_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'cs_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{s_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
 
 with tab_g:
-    g_df = df[df['label']=='g']
-    g_df.reset_index(inplace=True, drop=True)
-    # if g_df.empty:
-    #     tab1.tab_g.write('G와 관련된 활동 키워드가 없습니다.')
-    # else:
-    #     c1, c2, c3, c4, c5 = st.columns([1,1,1,1,0.4])
-    #     c1.text_area(g_df.iloc[0,0], value=g_df.iloc[0,1])
-    #     # c1.write(g_df.iloc[0,0])
-    #     # c1.write(g_df.iloc[0,1])
-    #     # c1.metric(g_df.iloc[0,0], g_df.iloc[0,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c2.metric(g_df.iloc[1,0], g_df.iloc[1,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c3.metric(g_df.iloc[2,0], g_df.iloc[2,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c4.metric(g_df.iloc[3,0], g_df.iloc[3,1], delta=None, delta_color="normal", help=None, label_visibility="visible")
-    #     c5.button("더보기",key='g_more')
-
-c6, c7 = tab1.columns([1.5,1])
-file_list = [f for f in os.listdir(path+'esg_report/') if f.startswith('hyundae')]
-        
-with c6:
-    st.subheader('파일 리스트')
-    # st.markdown(f'<h4>바로가기</h4>', True)
-    url = "https://kind.krx.co.kr/common/disclsviewer.do?method=search&acptno=20221108000292&docno=&viewerhost=&viewerport="
-    st.markdown(f'KRX 공시 <a href="https://kind.krx.co.kr/common/disclsviewer.do?method=search&acptno=20221108000292&docno=&viewerhost=&viewerport=" target="_blank"><button>바로가기</button></a>', unsafe_allow_html=True)
+    if g_o_sum.empty:
+        st.write(f"<h5 style='{p_style}'><br>'E와 관련된 활동 키워드가 없습니다.'<br><br></h5>", unsafe_allow_html = True)
+    else:
+        cg0, cg1, cg2 = st.columns([1,1,1])
+        cg3, cg4, cg5 = st.columns([1,1,1])
+        for i in range(6):
+            if len(g_o_sum)>i:
+                globals()[f'cg{i}'].write(f"<h5 style='{b_style}'><strong>{g_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'cg{i}'].write(f"<h5 style='{p_style}'><br>{g_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
+    with st.expander("더보기"):
+        left = len(g_o_sum)-6
+        for i in range(left//3+1):
+            globals()[f"cg_{i+2}0"], globals()[f"cg_{i+2}1"], globals()[f"cg_{i+2}2"] = st.columns([1,1,1])
+        for i, item in g_o_sum.iterrows():
+            if i<6:
+                continue
+            else:
+                globals()[f'cg_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{g_o_sum.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                globals()[f'cg_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{g_o_sum.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
     
-    for file in file_list:
-        if file is not None:
-            with open(path+'esg_report/'+file, "rb") as f:
-                encoded_pdf = base64.b64encode(f.read()).decode("utf-8")
-            with st.expander(file.replace(".pdf","")):
-                st.write('2021 지속가능경영보고서 요약본, 2022.07.04 기준')
-                st.markdown(f'{file} <a href="data:application/pdf;base64,{encoded_pdf}" download={file}><button>다운로드</button></a>', unsafe_allow_html=True)
 
-    # selected_file = st.selectbox("Select a file:", file_list)
-    # if selected_file is not None:
-    #     st.write('2021 지속가능경영보고서 요약본')
-    #     with open(path+'esg_report/'+selected_file, "rb") as f:
-    #         encoded_pdf = base64.b64encode(f.read()).decode("utf-8")
-    #     st.markdown(f'{selected_file} <a href="data:application/pdf;base64,{encoded_pdf}" download={selected_file}><button>다운로드</button></a>', unsafe_allow_html=True)
-    #     with st.expander("세부 정보 보기"):
-    #         st.write('2021 지속가능경영보고서 요약본, 2022.07.04 기준')
-    #         with open(path+'esg_report/'+selected_file, "rb") as f:
+      
+with c1:
+    urls_df = pd.read_csv(path+'esg_report/report_url.csv', encoding = 'cp949')
+    com_urls = urls_df[urls_df['com']==com]
+    for _, u in com_urls.iterrows():
+        url = u['url']
+        text = u['text']
+        st.markdown(f'{text} <a href=url target="_blank"><button>바로가기</button></a>', unsafe_allow_html=True)
+    
+    ###### 기존 로컬에 저장해둔  공시 파일 올리는 코드... 이지만 
+    # for file in o_files:
+    #     if file is not None:
+    #         with open(path+'esg_report/'+com+'/'+file, "rb") as f:
     #             encoded_pdf = base64.b64encode(f.read()).decode("utf-8")
-    #         if st.button("Download PDF"):
-    #             st.markdown(f'<a href="data:application/pdf;base64,{encoded_pdf}" download={selected_file}<button>Download {selected_file}</button></a>', unsafe_allow_html=True)
-        # encoded_pdf
-            # st.download_button('파일 다운로드', selected_file)
+    #         name = file.replace('_기존_','')
+    #         st.markdown(f'{name}  <a href="data:application/pdf;base64,{encoded_pdf}" download={encoded_pdf}><button>다운로드</button></a>', unsafe_allow_html=True)
 
-with c7:
-    st.subheader('파일 추가 업로드')
+with c2:
     uploaded_files = st.file_uploader('추가 파일을 업로드하세요.', accept_multiple_files = True)
     for up in uploaded_files:
         if up is not None:
             filename = save_uploaded_file(path+'esg_report/', up)
-            with c6:
-                with st.expander(filename):
-                    with open(path+'esg_report/'+filename, "rb") as f:
-                        encoded_pdf = base64.b64encode(f.read()).decode("utf-8")   
-                    st.markdown(f'{filename } <a href="data:application/pdf;base64,{encoded_pdf}" download="{encoded_pdf}"><button>다운로드</button></a>', True)
+            with c1:
+                with open(path+'esg_report/'+com+'/'+filename, "rb") as f:
+                    encoded_pdf = base64.b64encode(f.read()).decode("utf-8")   
+                st.markdown(f'{filename } <a href="data:application/pdf;base64,{encoded_pdf}" download="{encoded_pdf}"><button>다운로드</button></a>', True)
             # st.balloons()
             suc = st.success('파일을 성공적으로 업로드했습니다.')
 
-# 기존 데이터는 새로 올리는 파일과 구분될 수 있도록 파일명 변경
-# 링크 리스트 파일로 작성
-# 산업군때 구현할 select 그거를 명시적으로 드러내지는 않아도 com으로 기업명 설정하기 (com = hyndae)
-# 파일명 수정 요청
+# esg 키워드 파이차트
+# with c3:
+
+# 공시 esg 키워드 보여주는 표
+# with c4:
+
+
