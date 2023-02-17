@@ -2,6 +2,5 @@ streamlit
 pandas
 matplotlib
 numpy
-base64
 dateutil.rrule
 PIL
