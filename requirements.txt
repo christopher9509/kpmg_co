@@ -1,10 +1,10 @@
 streamlit
 pandas
-pyplot
+matplotlib
 numpy
 os
 base64
 re
 datetime
-rrule, DAILY
-Image
+dateutil.rrule
+PIL
