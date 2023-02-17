@@ -165,7 +165,7 @@ except:
 d_tot = pd.read_csv(path2 + f'disclosure_total.csv', encoding = 'cp949')
 
 # news : ESG 뉴스 데이터셋
-news = pd.read_csv(path2+ "test_sin_analysis_sample.csv", encoding = 'cp949')
+news = pd.read_csv(path2+ "test_hyundaehomeshopping_analysis.csv", encoding = 'cp949')
 news = news.loc[news['pre_label']>0]
 news['date'] = pd.to_datetime(news['date']).dt.date
 news['re_sent'] = news['sentiment'].apply(lambda x: 1 if x == 1 else -1)
