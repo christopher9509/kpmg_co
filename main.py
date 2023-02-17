@@ -49,7 +49,7 @@ cols = ['#58C558', '#E9C544', '#475EAA']
 
 ##### Logo #####
 _, cl, _ = st.columns([0.5, 1, 0.5])
-logo = Image.open('../dataset/logo'+'.png')
+logo = Image.open('./dataset/logo'+'.png')
 cl.image(logo)
 st.write(' ')
 #####
@@ -58,7 +58,7 @@ st.write(' ')
 with st.sidebar:
     _, c00, _ = st.columns([1,1,1])
     _, c01 = st.columns([0.6,2])
-    com_logo = Image.open('../dataset/logo_현대홈쇼핑'+'.png')
+    com_logo = Image.open('./dataset/logo_현대홈쇼핑'+'.png')
     c00.image(com_logo)
     menu = c01.radio('', ('자사 분석', '산업군 분석'), label_visibility='collapsed')
 #####
