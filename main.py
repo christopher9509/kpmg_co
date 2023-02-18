@@ -46,9 +46,9 @@ def plot_2d_graph(vocabs, xs, ys, col):
     for i, v in enumerate(vocabs):
         plt.annotate(v, xy=(xs[i], ys[i]))
 
-# 한글폰트 세팅
-font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/HANCOM GOTHIC REGULAR.TTF").get_name()
-rc('font', family=font_name)
+# # 한글폰트 세팅
+# font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/HANCOM GOTHIC REGULAR.TTF").get_name()
+# rc('font', family=font_name)
 
 
 ##### Font Style & Color Style #####
