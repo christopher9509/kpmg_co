@@ -47,7 +47,7 @@ def plot_2d_graph(vocabs, xs, ys, col):
         plt.annotate(v, xy=(xs[i], ys[i]))
 
 # 한글폰트 세팅
-font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/Hancom Gothic Regular.ttf").get_name()
+font_name = font_manager.FontProperties(fname=font_manager.findfont('NanumGothic')).get_name()
 rc('font', family=font_name)
 
 
