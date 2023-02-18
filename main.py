@@ -69,6 +69,7 @@ p_style = ("text-align:left; padding: 0px; font-family: Noto Sans KR; font-size:
 sub_style = ("text-align:center; padding: 0px; font-family: arial black; font-size: 110%; font-weight: 900; line-height: 1.5")
 cols = ['#58C558', '#E9C544', '#475EAA']
 col_vs = ['#BAEBBA', '#F3E5B1', '#B3BEE0']
+col_show = ['#FF7A00', '#ECE6E0', '#FDBC81']
 #####
 
 ##### Logo #####
@@ -152,6 +153,7 @@ else:
         n_e_date = c382.date_input('조회 종료 날짜를 선택하세요.', datetime.date(2022,12,20), min_value = n_s_date, max_value = datetime.date(2023,1,13))
         st.write(f"<h5 style='{c_style}'>{n_s_date} - {n_e_date} 기간에 작성된 뉴스를 조회합니다.<br><br></h5>", unsafe_allow_html = True)
         sent = st.selectbox('긍/부정을 선택하세요.', sents)
+        n_vs_tab_e, n_vs_tab_s, n_vs_tab_g = st.tabs(["&nbsp;&nbsp;&nbsp;E&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;S&nbsp;&nbsp;&nbsp;", "&nbsp;&nbsp;&nbsp;G&nbsp;&nbsp;&nbsp;"])
 #####
 
 ##### Directory error handling #####
@@ -226,6 +228,8 @@ n_show_g = n_show_g.sort_values('date', ascending = False).reset_index(drop = Tr
 # 산업군 데이터셋
 news_tot = pd.read_csv(path2 + f'final_merge.csv')
 news_tot['date'] = pd.to_datetime(news_tot['date']).dt.date
+news_tot['re_sent'] = news_tot['sentiment'].apply(lambda x: 1 if x == 1 else -1)
+news_tot['re_sent_score'] = news_tot['re_sent']*news_tot['score']
 n_tot = news_tot.loc[(news_tot['date'] >= s_date) & (news_tot['date'] <= e_date)].copy()
 
 n_show_tot = news_tot.loc[(news_tot['date'] >= n_s_date) & (news_tot['date'] <= n_e_date)].copy()
@@ -392,6 +396,12 @@ try:
         plt.xticks(x, esg, fontsize = 15)
         plt.yticks(range(max(n_keys)+1))
         st.write(f"<h5 style='{sub_style}'><strong>ESG 키워드 분포도</strong></h5>", unsafe_allow_html = True)
+        for i, v in enumerate(x):
+            plt.text(v, n_keys[i], str(n_keys[i]),
+                fontsize=9,
+                color="black",
+                horizontalalignment='center',
+                verticalalignment='bottom')
         st.pyplot(fig)
         leg = "   ".join(leg)
         st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
@@ -498,149 +508,223 @@ try:
     n_tabs = [(n_tab_e, n_show_e), (n_tab_s, n_show_s), (n_tab_g, n_show_g)]
     for n_tab in n_tabs:
         with n_tab[0]:
-            if n_tab[1].empty:
-                st.write(f"<h5 style='{p_style}'>해당 기간에 조회된 뉴스가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-            elif sent == '전체':
-                st.write(n_tab[1])
+            if sent == '전체':
+                tmp = n_tab[1]
             else:
                 tmp = n_tab[1][n_tab[1]['sent_range'].str.contains(sent)].copy().reset_index(drop = True)
-                if tmp.empty:
-                    st.write(f"<h5 style='{p_style}'>해당 기간에 조회된 {sent} 뉴스가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-                else:
-                    st.write(tmp)
+            if tmp.empty:
+                st.write(f"<h5 style='{p_style}'>해당 기간에 조회된 {sent} 뉴스가 없습니다.<br><br></h5>", unsafe_allow_html = True)
+            else:
+                st.write(tmp)
 except:
     pass
 
+try:
+    with c31:
+        st.write(f"<h5 style='{c_style}'>{com}: 2021 지속가능경영보고서, {dis[com]} 기준</h5>", unsafe_allow_html = True)
+        st.write(f"<h5 style='{c_style}'>{vs_com}: 2021 지속가능경영보고서, {dis[vs_com]} 기준</h5>", unsafe_allow_html = True)
 
-with c31:
-    st.write(f"<h5 style='{c_style}'>{com}: 2021 지속가능경영보고서, {dis[com]} 기준</h5>", unsafe_allow_html = True)
-    st.write(f"<h5 style='{c_style}'>{vs_com}: 2021 지속가능경영보고서, {dis[vs_com]} 기준</h5>", unsafe_allow_html = True)
-
-with c32:
-    st.write(f"<h5 style='{sub_style}'><br><strong>ESG 공시 키워드 분포</strong><br></h5>", unsafe_allow_html = True)
-    e_key = [len(d_e), len(d_tot[d_tot['label']=='e']), len(d_vs_e)]
-    s_key = [len(d_s), len(d_tot[d_tot['label']=='s']), len(d_vs_s)]
-    g_key = [len(d_g), len(d_tot[d_tot['label']=='g']), len(d_vs_g)]
-    name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
-    fig, ax = plt.subplots()
-    plt.bar(name, e_key, color = cols[0]) 
-    plt.bar(name, s_key, bottom=e_key, color = cols[1])
-    plt.bar(name, g_key, bottom=np.array(s_key)+np.array(e_key), color = cols[2])
-    plt.legend(esg)
-    st.pyplot(fig)
-
-with c33:
-    st.write(f"<h5 style='{sub_style}'><br><strong>ESG 유사 키워드 분포</strong><br></h5>", unsafe_allow_html = True)
-    fig, ax = plt.subplots()
-    for k, v in d_sim.items():
-        vocabs = v[0]
-        word_vectors_list = v[1]
-        pca = PCA(n_components=2)
-        xys = pca.fit_transform(word_vectors_list)
-        xs = xys[:,0]
-        ys = xys[:,1]
-        ax.scatter(xs, ys, marker = 'o', c=cols[k], label = f'{comp[com]}'.replace('_',' ').upper()+', ' +esg[k])
-        for i, v in enumerate(vocabs):
-            ax.annotate(v, xy=(xs[i], ys[i]))
-    for k, v in d_vs_sim.items():
-        vocabs = v[0]
-        word_vectors_list = v[1]
-        pca = PCA(n_components=2)
-        xys = pca.fit_transform(word_vectors_list)
-        xs = xys[:,0]
-        ys = xys[:,1]
-        ax.scatter(xs, ys, marker = 'o', c=col_vs[k], label = f'{comp[vs_com]}'.upper()+', ' +esg[k])
-        for i, v in enumerate(vocabs):
-            ax.annotate(v, xy=(xs[i], ys[i]))
-    plt.xlim(-0.06,0.06)
-    plt.ylim(-0.06,0.06)
-    plt.legend(loc='lower left')
-    st.pyplot(fig)
-
-for c, i in zip([c341, c342, c343], [com, vs_com, '전체']):
-    with c:
-        st.write(f"<h5 style='{p_style}'><center><strong>{i} TOP 키워드</strong></center><br></h5>", unsafe_allow_html = True)
-        if i == '전체':
-            top_keywords = d_tot.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-            st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
-        elif i == com:
-            top_keywords = d.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-            st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
-        else:
-            top_keywords = d_vs.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-            st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+    with c32:
+        st.write(f"<h5 style='{sub_style}'><br><strong>ESG 공시 키워드 분포</strong><br></h5>", unsafe_allow_html = True)
+        e_key = [len(d_e), len(d_tot[d_tot['label']=='e'])/4, len(d_vs_e)]
+        s_key = [len(d_s), len(d_tot[d_tot['label']=='s'])/4, len(d_vs_s)]
+        g_key = [len(d_g), len(d_tot[d_tot['label']=='g'])/4, len(d_vs_g)]
+        name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
+        x = name + name + name
+        y = e_key + [x+y for x,y in zip(e_key, s_key)] + [x+y for x,y in zip([x+y for x,y in zip(e_key, s_key)], g_key)]
+        actual_y = e_key+s_key+g_key
+        fig, ax = plt.subplots()
+        plt.bar(name, e_key, color = cols[0]) 
+        plt.bar(name, s_key, bottom=e_key, color = cols[1])
+        plt.bar(name, g_key, bottom=np.array(s_key)+np.array(e_key), color = cols[2])
+        plt.legend(esg)
+        for i, v in enumerate(x):
+            plt.text(v, y[i], str(actual_y[i]),
+                fontsize=9,
+                color="black",
+                horizontalalignment='center',
+                verticalalignment='bottom')
+        st.pyplot(fig)
+        st.write(f"<h5 style='{c_style}'>각 기업별 ESG 공시의 전체 키워드 개수를 막대그래프 형식으로 나타낸 차트입니다.<br>자사({com})의 ESG 공시 키워드 분포를 선택한 기업({vs_com}), 그리고 산업평균과 함께 비교 분석함으로써 상대적 ESG 공시 키워드 분포를 파악할 수 있습니다.<br><br>(큐레이팅)?<br></h5>", unsafe_allow_html = True)
+        
 
 
-with c35:
-    st.write(f"<h5 style='{c_style}'>{vs_com}의 공시 링크입니다.<br><br></h5>", unsafe_allow_html = True)
-    urls_df = pd.read_csv(path2+'report_url.csv', encoding = 'cp949')
-    com_urls = urls_df[urls_df['com']==vs_com]
-    for _, u in com_urls.iterrows():
-        url = u['url']
-        text = u['text']
-        st.write(f'{text} <a href="{url}" target="_blank"><button>바로가기</button></a>', unsafe_allow_html=True)
+    with c33:
+        st.write(f"<h5 style='{sub_style}'><br><strong>ESG 유사 키워드 분포</strong><br></h5>", unsafe_allow_html = True)
+        fig, ax = plt.subplots()
+        for k, v in d_sim.items():
+            vocabs = v[0]
+            word_vectors_list = v[1]
+            pca = PCA(n_components=2)
+            xys = pca.fit_transform(word_vectors_list)
+            xs = xys[:,0]
+            ys = xys[:,1]
+            ax.scatter(xs, ys, marker = 'o', c=cols[k], label = f'{comp[com]}'.replace('_',' ').upper()+', ' +esg[k])
+            for i, v in enumerate(vocabs):
+                ax.annotate(v, xy=(xs[i], ys[i]))
+        for k, v in d_vs_sim.items():
+            vocabs = v[0]
+            word_vectors_list = v[1]
+            pca = PCA(n_components=2)
+            xys = pca.fit_transform(word_vectors_list)
+            xs = xys[:,0]
+            ys = xys[:,1]
+            ax.scatter(xs, ys, marker = 'o', c=col_vs[k], label = f'{comp[vs_com]}'.upper()+', ' +esg[k])
+            for i, v in enumerate(vocabs):
+                ax.annotate(v, xy=(xs[i], ys[i]))
+        plt.xlim(-0.06,0.06)
+        plt.ylim(-0.06,0.06)
+        plt.legend(loc='lower left')
+        st.pyplot(fig)
 
-with c44:
-    st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 키워드 분포<br></h5>", unsafe_allow_html = True)
-    bar_width = 0.35
-    n_e_key = [n_e['model_keyword'].nunique(), n_tot[n_tot['pre_label']==1]['model_keyword'].nunique(), n_vs_e['model_keyword'].nunique()]
-    n_s_key = [n_s['model_keyword'].nunique(), n_tot[n_tot['pre_label']==2]['model_keyword'].nunique(), n_vs_s['model_keyword'].nunique()]
-    n_g_key = [n_g['model_keyword'].nunique(), n_tot[n_tot['pre_label']==3]['model_keyword'].nunique(), n_vs_g['model_keyword'].nunique()]
-    name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
-    fig, ax = plt.subplots()
-    ax.bar([0,1,2], n_e_key, color=cols[0], width=0.2, align='center', label=esg[0])
-    ax.bar([0.2,1.2,2.2], n_s_key, color=cols[1], width=0.2, align='center', label=esg[1])
-    ax.bar([0.4,1.4,2.4], n_g_key, color=cols[2], width=0.2, align='center', label=esg[2])
-    ax.set_xticks([0.1, 1.1, 2.1])
-    ax.set_xticklabels(esg)
-    plt.legend()
-    st.pyplot(fig)
+    for c, i in zip([c341, c342, c343], [com, vs_com, '전체']):
+        with c:
+            st.write(f"<h5 style='{p_style}'><center><strong>{i} TOP 키워드</strong></center><br></h5>", unsafe_allow_html = True)
+            if i == '전체':
+                top_keywords = d_tot.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+            elif i == com:
+                top_keywords = d.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+            else:
+                top_keywords = d_vs.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
 
-with c45:
-    st.write(f"<h5 style='{sub_style}'><strong>ESG 유사 키워드 분포<br></h5>", unsafe_allow_html = True)
 
-keyword_show = [com, vs_com, '전체']
-for c, i in zip([c50, c51, c52], range(3)):
-    with c:
-        globals()[f'{c}{i}0'], globals()[f'{c}{i}1'], globals()[f'{c}{i}2'] = st.columns([1,1,1])
-        for c_, i_ in zip([globals()[f'{c}{i}0'], globals()[f'{c}{i}1'], globals()[f'{c}{i}2']], range(3)):
-            with c_:
-                st.write(f"<h5 style='{p_style}'><center><strong>{keyword_show[i_]} TOP 키워드</strong></center><br></h5>", unsafe_allow_html = True)
-                if i_ == 2:
-                    n_dup = n_tot['model_keyword'].value_counts().to_dict()
-                    n_tmp = n_tot[n_tot['pre_label'] == (i+1)].copy()
-                    n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
-                    n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-                    n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
-                    if n_tmp.empty:
-                        st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
+    with c35:
+        st.write(f"<h5 style='{c_style}'>{vs_com}의 공시 링크입니다.<br><br></h5>", unsafe_allow_html = True)
+        urls_df = pd.read_csv(path2+'report_url.csv', encoding = 'cp949')
+        com_urls = urls_df[urls_df['com']==vs_com]
+        for _, u in com_urls.iterrows():
+            url = u['url']
+            text = u['text']
+            st.write(f'{text} <a href="{url}" target="_blank"><button>바로가기</button></a>', unsafe_allow_html=True)
+
+    #####산업군분석 - 뉴스분석
+    with c44:
+        st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 키워드 분포<br></h5>", unsafe_allow_html = True)
+        fig, ax = plt.subplots()
+        x = [0,1,2,0.2,1.2,2.2,0.4,1.4,2.4]
+        y = [n_e['model_keyword'].nunique(),n_s['model_keyword'].nunique(),n_g['model_keyword'].nunique(),n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4,n_vs_e['model_keyword'].nunique(), n_vs_s['model_keyword'].nunique(),n_vs_g['model_keyword'].nunique()]
+        ax.bar(0, n_e['model_keyword'].nunique(), color = cols[0], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[0])
+        ax.bar(1, n_s['model_keyword'].nunique(), color = cols[1], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[1])
+        ax.bar(2, n_g['model_keyword'].nunique(), color = cols[2], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[2])
+        ax.bar([0.2,1.2,2.2], [n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4], color = col_show[1], width=0.2, align='center', label='IA\n(Industrial Average)')
+        ax.bar(0.4, n_vs_e['model_keyword'].nunique(), color = col_vs[0], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[0])
+        ax.bar(1.4, n_vs_s['model_keyword'].nunique(), color = col_vs[1], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[1])
+        ax.bar(2.4, n_vs_g['model_keyword'].nunique(), color = col_vs[2], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[2])
+        ax.set_xticks([0.2, 1.2, 2.2])
+        ax.set_xticklabels(esg)
+        for i, v in enumerate(x):
+            plt.text(v, y[i], str(y[i]),
+                fontsize=9,
+                color="black",
+                horizontalalignment='center',
+                verticalalignment='bottom')
+        plt.legend()
+        st.pyplot(fig)
+        st.write(f"<h5 style='{c_style}'>각 기업의 ESG별 뉴스 키워드 가짓수 분포와 산업 평균 키워드 가짓수를 나타낸 차트입니다.<br></h5>", unsafe_allow_html = True)
+
+    with c45:
+        st.write(f"<h5 style='{sub_style}'><strong>ESG 유사 키워드 분포<br></h5>", unsafe_allow_html = True)
+
+    keyword_show = [com, vs_com, '전체']
+    for c, i in zip([c50, c51, c52], range(3)):
+        with c:
+            globals()[f'{c}{i}0'], globals()[f'{c}{i}1'], globals()[f'{c}{i}2'] = st.columns([1,1,1])
+            for c_, i_ in zip([globals()[f'{c}{i}0'], globals()[f'{c}{i}1'], globals()[f'{c}{i}2']], range(3)):
+                with c_:
+                    st.write(f"<h5 style='{p_style}'><center><strong>{keyword_show[i_]} TOP 키워드</strong></center><br></h5>", unsafe_allow_html = True)
+                    if i_ == 2:
+                        n_dup = n_tot['model_keyword'].value_counts().to_dict()
+                        n_tmp = n_tot[n_tot['pre_label'] == (i+1)].copy()
+                        n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
+                        n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
+                        n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
+                        if n_tmp.empty:
+                            st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
+                        else:
+                            st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
+                    elif i_ == 0:
+                        n_dup = n['model_keyword'].value_counts().to_dict()
+                        n_tmp = n[n['pre_label'] == (i+1)].copy()
+                        n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
+                        n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
+                        n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
+                        if n_tmp.empty:
+                            st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
+                        else:
+                            st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
                     else:
-                        st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
-                elif i_ == 0:
-                    n_dup = n['model_keyword'].value_counts().to_dict()
-                    n_tmp = n[n['pre_label'] == (i+1)].copy()
-                    n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
-                    n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-                    n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
-                    if n_tmp.empty:
-                        st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
-                    else:
-                        st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
-                else:
-                    n_dup = n_vs['model_keyword'].value_counts().to_dict()
-                    n_tmp = n_vs[n_vs['pre_label'] == (i+1)].copy()
-                    n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
-                    n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-                    n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
-                    if n_tmp.empty:
-                        st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
-                    else:
-                        st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
+                        n_dup = n_vs['model_keyword'].value_counts().to_dict()
+                        n_tmp = n_vs[n_vs['pre_label'] == (i+1)].copy()
+                        n_tmp['dup_key_cnt'] = n_tmp['model_keyword'].map(n_dup)
+                        n_tmp = n_tmp.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
+                        n_tmp = n_tmp[['model_keyword', 'corpus_keyword']].head(3)
+                        if n_tmp.empty:
+                            st.write(f"<h5 style='{c_style}'><center>해당 기간에 <strong>{keyword_show[i_]}</strong>의 <strong>{esg[i]}</strong> 키워드가<br>존재하지 않습니다.</center><br></h5>", unsafe_allow_html = True)
+                        else:
+                            st.write(n_tmp[['model_keyword', 'corpus_keyword']].head(3))
 
-with c61:
-    st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 비율<br></h5>", unsafe_allow_html = True)
+    with c61:
+        st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 비율<br></h5>", unsafe_allow_html = True)
+        e_news = [len(n_e), len(n_tot[n_tot['pre_label']==1]), len(n_vs_e)]
+        s_news = [len(n_s), len(n_tot[n_tot['pre_label']== 2]), len(n_vs_s)]
+        g_news = [len(n_g), len(n_tot[n_tot['pre_label']==3]), len(n_vs_g)]
+        name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
+        x = name + name + name
+        y = e_news + [x+y for x,y in zip(e_news, s_news)] + [x+y for x,y in zip([x+y for x,y in zip(e_news, s_news)], g_news)]
+        actual_y = e_news + s_news + g_news
 
-with c62:
-    st.write(f"<h5 style='{sub_style}'><strong>시계열 ESG 뉴스 감성분석 그래프<br></h5>", unsafe_allow_html = True)
+        fig, ax = plt.subplots()
+        plt.bar(name, e_news, color = cols[0]) 
+        plt.bar(name, s_news, bottom=e_news, color = cols[1])
+        plt.bar(name, g_news, bottom=np.array(s_news)+np.array(e_news), color = cols[2])
+        plt.legend(esg)
+        for i, v in enumerate(x):
+            plt.text(v, y[i], str(actual_y[i]),
+                    fontsize=9,
+                    color="black",
+                    horizontalalignment='center',
+                    verticalalignment='bottom')
+        st.pyplot(fig)
+        st.write(f"<h5 style='{c_style}'>각 기업별 ESG 뉴스 개수와 E,S,G 뉴스가 각각 차지하는 비율을 막대그래프 형식으로 나타낸 차트입니다.<br>자사({com})의 ESG 뉴스 비율을 선택한 기업({vs_com}), 그리고 산업평균과 함께 비교 분석함으로써 상대적 ESG 활동을 파악할 수 있습니다.<br></h5>", unsafe_allow_html = True)
 
+    with c62:
+        st.write(f"<h5 style='{sub_style}'><strong>시계열 ESG 뉴스 감성분석 그래프<br></h5>", unsafe_allow_html = True)
+        dates = list(rrule(DAILY, dtstart=s_date, until=e_date))
+        fig, ax = plt.subplots()
+        n_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
+        ax.plot(dates, n.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[0])
+        n_tot_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
+        ax.plot(dates, n_tot.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[1])
+        n_vs_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
+        ax.plot(dates, n_vs.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[2])
+        plt.xticks(fontsize=10, rotation = 45)
+        plt.ylim(-5,5)
+        plt.hlines(0, dates[0], dates[-1], color='black', linestyle='solid', linewidth=1)
+        # plt.xticks(fontsize=7)
+        plt.ylabel('sentiment score')
+        # plt.legend()
+        st.pyplot(fig)
+        with st.expander("감성분석 산정 기준"):
+            st.write("kobert를 esg 긍/부정 감성 분류 task로 fine-tuning한 모델을 사용하여 도출한 해당 날짜의 뉴스에 대한 감성점수입니다.\n\n강한/보통/약한/중립 긍부정 나누는 기준은 다음과 같습니다:\n- sentiment score를 분위수 4개로 나누어서 4개의 그룹으로 나눔\n- 구체적으로 (1) 0.5 이하 : 중립, (2) 0.5 초과 1.5 이하 : 약한, (3) 1.5 초과 2.5 이하 : 보통, (4) 2.5 초과 : 강한 으로 판단\n- label이 1일 경우, 긍정, label이 0일 경우 부정으로 판단함")
+
+    c383.metric('Environment', "  "+str(len(n_vs_show_e))+"  ")
+    c384.metric('Social', "  "+str(len(n_vs_show_s))+"  ")
+    c385.metric('Governance', "  "+str(len(n_vs_show_g))+"  ")
+
+    n_vs_tabs = [(n_vs_tab_e, n_vs_show_e), (n_vs_tab_s, n_vs_show_s), (n_vs_tab_g, n_vs_show_g)]
+    for n_vs_tab in n_vs_tabs:
+        with n_vs_tab[0]:
+            if sent == '전체':
+                tmp = n_vs_tab[1]
+            else:
+                tmp = n_vs_tab[1][n_vs_tab[1]['sent_range'].str.contains(sent)].copy().reset_index(drop = True)
+            if tmp.empty:
+                st.write(f"<h5 style='{p_style}'>해당 기간에 조회된 {sent} 뉴스가 없습니다.<br><br></h5>", unsafe_allow_html = True)
+            else:
+                st.write(tmp)
+except:
+    pass
 #####
