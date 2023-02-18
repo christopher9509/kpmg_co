@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib import font_manager, rc
 import numpy as np
 import os
 import base64
@@ -8,6 +9,7 @@ import re
 import datetime
 from dateutil.rrule import rrule, DAILY
 from PIL import Image
+from sklearn.decomposition import PCA
 
 st.set_page_config(page_title="비정형 ESG 통합 분석 플랫폼", page_icon=None, layout="wide", initial_sidebar_state="expanded", menu_items=None)
 
@@ -15,9 +17,10 @@ st.set_page_config(page_title="비정형 ESG 통합 분석 플랫폼", page_icon
 #     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 coms = ['신세계', 'GS리테일', '롯데하이마트']
-comp = {'신세계': 'sinsegye', 'GS리테일':'GSretail', '롯데하이마트':'Lottehi', '현대홈쇼핑':'hyundaehomshopping' }
+comp = {'신세계': 'sinsegae', 'GS리테일':'GSretail', '롯데하이마트':'Lottehi', '현대홈쇼핑':'hyundai_home_shopping' }
 esg = ['E', 'S', 'G']
 esg_sp = ['E (Environment)', 'S (Social)', 'G (Governance)']
+esg_idx = {'e':0,'s':1,'g':2}
 sents = ('전체', '긍정', '중립', '부정')
 dis = {'신세계': '2022.06.29', 'GS리테일':'2022.07.04', '롯데하이마트':'2022.06.24', '현대홈쇼핑':'2022.11.08' }
 
@@ -37,6 +40,16 @@ def save_uploaded_file(path, file):
         f.write(file.getbuffer())
     return filename
 
+def plot_2d_graph(vocabs, xs, ys, col):
+    plt.figure(figsize=(8 ,6))
+    plt.scatter(xs, ys, marker = 'o', c=col)
+    for i, v in enumerate(vocabs):
+        plt.annotate(v, xy=(xs[i], ys[i]))
+
+# 한글폰트 세팅
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
+rc('font', family=font_name)
+
 
 ##### Font Style & Color Style #####
 c_style = ("text-align:left; padding: 0px; font-family: Noto Sans KR; font-size: 80%; line-height: 1.5")
@@ -45,6 +58,7 @@ b_style = ("text-align:center; padding: 0px; font-family: arial black; font-size
 p_style = ("text-align:left; padding: 0px; font-family: Noto Sans KR; font-size: 100%; font-weight: 500; line-height: 1.5")
 sub_style = ("text-align:center; padding: 0px; font-family: arial black; font-size: 110%; font-weight: 900; line-height: 1.5")
 cols = ['#58C558', '#E9C544', '#475EAA']
+col_vs = ['#BAEBBA', '#F3E5B1', '#B3BEE0']
 #####
 
 ##### Logo #####
@@ -141,14 +155,18 @@ make_dir(path2)
 
 ##### Data Loading #####
 # d : 공시 데이터셋
-d = pd.read_csv(path2 + 'disclosure_hyundaehomeshopping.csv', encoding = 'cp949')
+d = pd.read_csv(path2 + 'disclosure_hyundai_home_shopping.csv', encoding = 'cp949')
 d_e = d[d['label']=='e']
 d_s = d[d['label']=='s']
 d_s = d_s.reset_index(drop=True)
 d_g = d[d['label']=='g']
 d_g = d_g.reset_index(drop=True)
-# d_files : 공시 파일 리스트 (로컬 저장된)
-d_files = [f for f in os.listdir(path+'1-2. ESG report/esg_report/'+com+'/') if f.startswith('_기존_')]
+d_sim_list = os.listdir(path2 + 'disclosure_output/disclosure_hyundai_home_shopping.csv')
+d_sim = {}
+for s in d_sim_list:
+    globals()[f'd_{esg_idx[s]}_sim_vocab'] = np.load(path2 + 'disclosure_output/disclosure_hyundai_home_shopping.csv/'+s+'/vocabs.npy')
+    globals()[f'd_{esg_idx[s]}_sim_vec'] = np.load(path2 + 'disclosure_output/disclosure_hyundai_home_shopping.csv/'+s+'/word_vectors.npy')
+    d_sim[esg_idx[s]] = [globals()[f'd_{esg_idx[s]}_sim_vocab'], globals()[f'd_{esg_idx[s]}_sim_vec']]
 
 try:
     # d_vs : 경쟁사 공시 데이터셋
@@ -158,6 +176,14 @@ try:
     d_vs_s = d_vs_s.reset_index(drop=True)
     d_vs_g = d_vs[d_vs['label']=='g']
     d_vs_g = d_vs_g.reset_index(drop=True)
+
+    # d_vs_sim : 경쟁사 공시 키워드 유사도 데이터
+    d_vs_sim_list = os.listdir(path2 + f'disclosure_output/disclosure_{comp[vs_com]}.csv')
+    d_vs_sim = {}
+    for s in d_vs_sim_list:
+        globals()[f'd_{esg_idx[s]}_vs_sim_vocab'] = np.load(path2 + f'disclosure_output/disclosure_{comp[vs_com]}.csv/'+s+'/vocabs.npy')
+        globals()[f'd_{esg_idx[s]}_vs_sim_vec'] = np.load(path2 + f'disclosure_output/disclosure_{comp[vs_com]}.csv/'+s+'/word_vectors.npy')
+        d_vs_sim[esg_idx[s]] = [globals()[f'd_{esg_idx[s]}_vs_sim_vocab'], globals()[f'd_{esg_idx[s]}_vs_sim_vec']]
 except:
     pass
 
@@ -165,7 +191,7 @@ except:
 d_tot = pd.read_csv(path2 + f'disclosure_total.csv', encoding = 'cp949')
 
 # news : ESG 뉴스 데이터셋
-news = pd.read_csv(path2+ "test_hyundaehomeshopping_analysis.csv", encoding = 'cp949')
+news = pd.read_csv(path2+ "test_hyundai_home_shopping_analysis.csv", encoding = 'cp949')
 news = news.loc[news['pre_label']>0]
 news['date'] = pd.to_datetime(news['date']).dt.date
 news['re_sent'] = news['sentiment'].apply(lambda x: 1 if x == 1 else -1)
@@ -184,9 +210,16 @@ n_show_s = n_show_s.sort_values('date', ascending = False).reset_index(drop = Tr
 n_show_g = n_show[n_show['pre_label']==3][['date', 'text', 'sent_range']].copy()
 n_show_g = n_show_g.sort_values('date', ascending = False).reset_index(drop = True)
 
+# 산업군 데이터셋
+news_tot = pd.read_csv(path2 + f'test_sinsegae_analysis.csv', encoding = 'cp949')
+news_tot['date'] = pd.to_datetime(news_tot['date']).dt.date
+n_tot = news_tot.loc[(news_tot['date'] >= s_date) & (news_tot['date'] <= e_date)].copy()
+
+n_show_tot = news_tot.loc[(news_tot['date'] >= n_s_date) & (news_tot['date'] <= n_e_date)].copy()
+
 try:
     # vs_news : 경쟁사ESG 뉴스 데이터셋
-    vs_news = pd.read_csv(path2+ f"test_{comp[vs_com]}_analysis.csv", encoding = 'utf-8')
+    vs_news = pd.read_csv(path2+ f"test_{comp[vs_com]}_analysis.csv", encoding = 'cp949')
     vs_news = vs_news.loc[vs_news['pre_label']>0]
     vs_news['date'] = pd.to_datetime(vs_news['date']).dt.date
     vs_news['re_sent'] = vs_news['sentiment'].apply(lambda x: 1 if x == 1 else -1)
@@ -418,7 +451,7 @@ try:
         n_max = [x for j, x in enumerate(esg_sp) if j in idx]
         n_max = ', '.join(n_max)
         fig, ax = plt.subplots()
-        ax.pie(n_cnt, labels = esg, colors = cols, radius = 1, autopct='%.2f', textprops = {'size':10})
+        ax.pie(n_cnt, labels = esg, colors = cols, radius = 1, autopct='%.1f%%', textprops = {'size':10})
         st.pyplot(fig)
         leg = "   ".join(leg)
         st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
@@ -436,7 +469,7 @@ try:
         # ax.plot(dates, n_sent_per_date["n_g"], label = 'G', color = cols[2])
         ax.plot(dates, n.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = "#FF7A00")
         plt.xticks(fontsize=10, rotation = 45)
-        plt.ylim(-1,1)
+        plt.ylim(-5,5)
         plt.hlines(0, dates[0], dates[-1], color='black', linestyle='solid', linewidth=1)
         # plt.xticks(fontsize=7)
         plt.ylabel('sentiment score')
@@ -457,7 +490,11 @@ try:
             elif sent == '전체':
                 st.write(n_tab[1])
             else:
-                st.write(n_tab[1][n_tab[1]['sent_range'].str.contains(sent)])
+                tmp = n_tab[1][n_tab[1]['sent_range'].str.contains(sent)].copy().reset_index(drop = True)
+                if tmp.empty:
+                    st.write(f"<h5 style='{p_style}'>해당 기간에 조회된 {sent} 뉴스가 없습니다.<br><br></h5>", unsafe_allow_html = True)
+                else:
+                    st.write(tmp)
 except:
     pass
 
@@ -471,7 +508,7 @@ with c32:
     e_key = [len(d_e), len(d_tot[d_tot['label']=='e']), len(d_vs_e)]
     s_key = [len(d_s), len(d_tot[d_tot['label']=='s']), len(d_vs_s)]
     g_key = [len(d_g), len(d_tot[d_tot['label']=='g']), len(d_vs_g)]
-    name = ['Hyundae\nHomeshopping', 'IA\n(Industrial Average)', comp[vs_com].capitalize()]
+    name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
     fig, ax = plt.subplots()
     plt.bar(name, e_key, color = cols[0]) 
     plt.bar(name, s_key, bottom=e_key, color = cols[1])
@@ -481,6 +518,31 @@ with c32:
 
 with c33:
     st.write(f"<h5 style='{sub_style}'><br><strong>ESG 유사 키워드 분포</strong><br></h5>", unsafe_allow_html = True)
+    fig, ax = plt.subplots()
+    for k, v in d_sim.items():
+        vocabs = v[0]
+        word_vectors_list = v[1]
+        pca = PCA(n_components=2)
+        xys = pca.fit_transform(word_vectors_list)
+        xs = xys[:,0]
+        ys = xys[:,1]
+        ax.scatter(xs, ys, marker = 'o', c=cols[k], label = f'{comp[com]}'.replace('_',' ').upper()+', ' +esg[k])
+        for i, v in enumerate(vocabs):
+            ax.annotate(v, xy=(xs[i], ys[i]))
+    for k, v in d_vs_sim.items():
+        vocabs = v[0]
+        word_vectors_list = v[1]
+        pca = PCA(n_components=2)
+        xys = pca.fit_transform(word_vectors_list)
+        xs = xys[:,0]
+        ys = xys[:,1]
+        ax.scatter(xs, ys, marker = 'o', c=col_vs[k], label = f'{comp[vs_com]}'.upper()+', ' +esg[k])
+        for i, v in enumerate(vocabs):
+            ax.annotate(v, xy=(xs[i], ys[i]))
+    plt.xlim(-0.06,0.06)
+    plt.ylim(-0.06,0.06)
+    plt.legend(loc='lower left')
+    st.pyplot(fig)
 
 with c35:
     st.write(f"<h5 style='{c_style}'>{vs_com}의 공시 링크입니다.<br><br></h5>", unsafe_allow_html = True)
@@ -493,6 +555,19 @@ with c35:
 
 with c44:
     st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 키워드 분포<br></h5>", unsafe_allow_html = True)
+    bar_width = 0.35
+    n_e_key = [n_e['modeling_keyword'].nunique(), n_tot[n_tot['pre_label']==1]['modeling_keyword'].nunique(), n_vs_e['modeling_keyword'].nunique()]
+    n_s_key = [n_s['modeling_keyword'].nunique(), n_tot[n_tot['pre_label']==2]['modeling_keyword'].nunique(), n_vs_s['modeling_keyword'].nunique()]
+    n_g_key = [n_g['modeling_keyword'].nunique(), n_tot[n_tot['pre_label']==3]['modeling_keyword'].nunique(), n_vs_g['modeling_keyword'].nunique()]
+    name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
+    fig, ax = plt.subplots()
+    ax.bar([0,1,2], n_e_key, color=cols[0], width=0.2, align='center', label=esg[0])
+    ax.bar([0.2,1.2,2.2], n_s_key, color=cols[1], width=0.2, align='center', label=esg[1])
+    ax.bar([0.4,1.4,2.4], n_g_key, color=cols[2], width=0.2, align='center', label=esg[2])
+    ax.set_xticks([0.1, 1.1, 2.1])
+    ax.set_xticklabels(name)
+    plt.legend()
+    st.pyplot(fig)
 
 with c45:
     st.write(f"<h5 style='{sub_style}'><strong>ESG 유사 키워드 분포<br></h5>", unsafe_allow_html = True)
