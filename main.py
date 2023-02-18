@@ -49,6 +49,7 @@ def plot_2d_graph(vocabs, xs, ys, col):
 # 한글폰트 세팅
 font_name = font_manager.FontProperties(fname=font_manager.findfont('Malgun Gothic')).get_name()
 rc('font', family=font_name)
+plt.rcParams['font.family'] = 'Malgun Gothic'
 
 
 ##### Font Style & Color Style #####
