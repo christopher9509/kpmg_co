@@ -19,7 +19,7 @@
 - From : naver news crawling
 
 (2) ESG report(지속가능경영보고서 요약본)
-- Period : 2022년 공시, 세부 일자는 기업마다 상이.
+- Period : 2022년 공시, 세부 일자는 기업마다 상이
 - From : 기업공시채널 https://kind.krx.co.kr/
 
 ## Model
