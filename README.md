@@ -19,8 +19,10 @@
 - From : naver news crawling
 
 (2) ESG report(지속가능경영보고서 요약본)
-- Period : 2022년 공시, 세부 일자는 기업마다 상이
-- From : 기업공시채널 https://kind.krx.co.kr/
+- Period : (22년도 공시) 2022.06.24. 06.29, 07.04, 08.11, 11.08  
+- From : 한국거래소 ESG 포털
+- Companies : 총 5개 기업에 대한 공시
+- 처리 방법 : (1) Adobe의 data extractor solution을 활용하여 pdf 내 그림 및 테이블, 텍스트를 추출, (2) 저장된 json 파일에서 key 값인 'Text'에 대해 길이 10 이상의 문장을 뽑아서 전처리 하는 알고리즘 개발, (3) KeyBERT를 통해 문장들에 대해 대표 ESG Keyword 도출 및 ESG corpus 구축
 
 ## Model
 
