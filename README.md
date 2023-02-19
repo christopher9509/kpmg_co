@@ -56,3 +56,4 @@
 - Output : 공시 텍스트 클러스터별 요약문
 
 ## Framework
+<img src="https://github.com/christopher9509/kpmg_co/blob/main/image/framework.png" alt="drawing" width="900"/>
