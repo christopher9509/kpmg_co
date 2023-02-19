@@ -61,9 +61,9 @@ def plot_2d_graph(vocabs, xs, ys, col):
         plt.annotate(v, xy=(xs[i], ys[i]))
 
 # 한글폰트 세팅
-font_name = font_manager.FontProperties(fname=font_manager.findfont('Malgun Gothic')).get_name()
-rc('font', family=font_name)
-plt.rcParams['font.family'] = 'Malgun Gothic'
+# font_name = font_manager.FontProperties(fname=font_manager.findfont('Malgun Gothic')).get_name()
+# rc('font', family=font_name)
+# plt.rcParams['font.family'] = 'Malgun Gothic'
 
 
 ##### Font Style & Color Style #####
@@ -115,7 +115,7 @@ if menu == '자사 분석':
         st.write(f"<h5 style='{c_style}'>{s_date} - {e_date} 기간에 작성된 뉴스를 기반으로 분석을 진행합니다.</h5>", unsafe_allow_html = True)
         st.write(f"<h5 style='{t_style}'><br><br>{com} ESG 뉴스 키워드 분석<br><br></h5>", unsafe_allow_html = True)
         c23, _, c24 = st.columns([1,0.1,1])
-        st.write(f"<h5 style='{sub_style}'><strong>분야별 ESG 키워드 리스트</strong><br></h5>", unsafe_allow_html = True)
+        st.write(f"<h5 style='{sub_style}'><br><strong>분야별 ESG 키워드 리스트</strong><br></h5>", unsafe_allow_html = True)
         c251, c252, c253 = st.columns([1,1,1])
         st.write(f"<h5 style='{t_style}'><br><br>{com} ESG 뉴스 분석<br><br></h5>", unsafe_allow_html = True)
         c26, __, c27 = st.columns([1,0.05,1])
@@ -391,7 +391,12 @@ try:
         n_key_per_date["n_e"] = n_e.groupby("date")["model_keyword"].nunique().reindex(dates, fill_value=0)
         n_key_per_date["n_s"] = n_s.groupby("date")["model_keyword"].nunique().reindex(dates, fill_value=0)
         n_key_per_date["n_g"] = n_g.groupby("date")["model_keyword"].nunique().reindex(dates, fill_value=0)
-
+        e_max= max(n_key_per_date["n_e"].copy())
+        s_max = max(n_key_per_date["n_s"].copy())
+        g_max = max(n_key_per_date["n_g"].copy())
+        idx = [i for i, x in enumerate([e_max,s_max,g_max]) if x == max([e_max,s_max,g_max])]
+        n_key_per_date_max = [x for j, x in enumerate(esg_sp) if j in idx]
+        n_key_per_date_max = ', '.join(n_key_per_date_max)
         fig, ax = plt.subplots()
         ax.plot(dates, n_key_per_date["n_e"], label = 'E', color = cols[0])
         ax.plot(dates, n_key_per_date["n_s"], label = 'S', color = cols[1])
@@ -400,9 +405,8 @@ try:
         plt.ylabel('count')
         plt.legend()
         st.pyplot(fig)
-        st.write('차트 설명 추가')
-        # st.write(f"<h5 style='{p_style}'>{s_date} - {e_date} 동안 {com} 뉴스에서 <br><strong>{n_key_max}</strong> 관련 키워드가 가장 많이 추출되었습니다.<br><br></h5>", unsafe_allow_html = True)
-
+        st.write(f"<h5 style='{p_style}'>{s_date} - {e_date} 동안 하루 기준 <strong>{n_key_per_date_max}</strong> 관련 키워드가 최대 <strong>{max([e_max,s_max,g_max])}</strong>개로 가장 많이 추출되었습니다.<br><br></h5>", unsafe_allow_html = True)
+    
     for i, c in zip(range(3),[c251, c252, c253]):
         with c:
             st.write(f"<h5 style='{sub_style}'><br>{esg[i]}<br><br></h5>", unsafe_allow_html = True)
@@ -495,7 +499,14 @@ try:
                 horizontalalignment='center',
                 verticalalignment='bottom')
         st.pyplot(fig)
-        st.write(f"<h5 style='{c_style}'>각 기업별 ESG 공시의 전체 키워드 개수를 막대그래프 형식으로 나타낸 차트입니다.<br>자사({com})의 ESG 공시 키워드 분포를 선택한 기업({vs_com}), 그리고 산업평균과 함께 비교 분석함으로써 상대적 ESG 공시 키워드 분포를 파악할 수 있습니다.<br><br>(큐레이팅)?<br></h5>", unsafe_allow_html = True)
+        e_t = e_key[0]-e_key[1]
+        s_t = s_key[0]-s_key[1]
+        g_t = g_key[0]-g_key[1]
+        e_txt = f'{abs(e_t)}개 적고' if e_t<0 else ('동일하고' if e_t==0 else f'{abs(e_t)}개 많고')
+        s_txt = f'{abs(s_t)}개 적으며' if s_t<0 else ('동일하며' if s_t==0 else f'{abs(s_t)}개 많으며')
+        g_txt = f'{abs(g_t)}개 적습니다' if g_t<0 else ('동일합니다' if g_t==0 else f'{abs(g_t)}개 많습니다')
+
+        st.write(f"{com}은 산업평균 대비<br><strong>E(Environment)</strong> 키워드 가짓수가 {e_txt}, <br><strong>S(Social)</strong> 키워드 가짓수가 {s_txt}, <br><strong>G(Governance)</strong> 키워드 가짓수가 {g_txt}.<br></h5>", unsafe_allow_html = True)
         
 
 
@@ -573,7 +584,15 @@ try:
                 verticalalignment='bottom')
         plt.legend(fontsize = 9)
         st.pyplot(fig)
-        st.write(f"<h5 style='{c_style}'>각 기업의 ESG별 뉴스 키워드 가짓수 분포와 산업 평균 키워드 가짓수를 나타낸 차트입니다.<br></h5>", unsafe_allow_html = True)
+        e_t = n_e['model_keyword'].nunique()-(n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4)
+        s_t = n_s['model_keyword'].nunique()-(n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4)
+        g_t = n_g['model_keyword'].nunique()-(n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4)
+        e_txt = f'{abs(e_t)}개 적고' if e_t<0 else ('동일하고' if e_t==0 else f'{abs(e_t)}개 많고')
+        s_txt = f'{abs(s_t)}개 적으며' if s_t<0 else ('동일하며' if s_t==0 else f'{abs(s_t)}개 많으며')
+        g_txt = f'{abs(g_t)}개 적습니다' if g_t<0 else ('동일합니다' if g_t==0 else f'{abs(g_t)}개 많습니다')
+
+        st.write(f"{com}은 산업평균 대비<br><strong>E(Environment)</strong> 키워드 가짓수가 {e_txt}, <br><strong>S(Social)</strong> 키워드 가짓수가 {s_txt}, <br><strong>G(Governance)</strong> 키워드 가짓수가 {g_txt}.<br></h5>", unsafe_allow_html = True)
+        # st.write(f"<h5 style='{c_style}'>각 기업의 ESG별 뉴스 키워드 가짓수 분포와 산업 평균 키워드 가짓수를 나타낸 차트입니다.<br></h5>", unsafe_allow_html = True)
 
     with c45:
         st.write(f"<h5 style='{sub_style}'><strong>ESG 유사 키워드 분포<br></h5>", unsafe_allow_html = True)
