@@ -1,5 +1,6 @@
 # 삼정KPMG Ideaton 2023
 <img src="https://github.com/christopher9509/kpmg_co/blob/main/image/main.png" alt="drawing" width="900"/>
+
 ## Main
 - 참여자 : 이수민, 김영진, 최윤정, 이금진
 
