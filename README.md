@@ -55,5 +55,4 @@
 - Input : KeyBert로 뽑힌 클러스터의 키워드 + 클러스터 내 공시 텍스트 전체
 - Output : 공시 텍스트 클러스터별 요약문
 
-## Evaluation
-- Metric: Accuracy, F1 score
+## Prototype Sample
