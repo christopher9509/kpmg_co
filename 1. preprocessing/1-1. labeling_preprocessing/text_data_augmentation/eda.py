@@ -196,8 +196,8 @@ if __name__ == '__main__':
 	df = pd.read_csv(root_path+ '/esg_data_for_dtar.csv', encoding='utf-8')
 	target_length = df['label'].value_counts()[0]
  
-	# df['label']에서 1인 것만 추출
-	for i in range(1, 7):
+	# df['label']에서 3인 것만 추출
+	for i in range(1, 4):
 		aug_df = pd.DataFrame(columns=['date', 'text', 'label'])
 		df_ = augmentation_df_pre(df, i)
 		# index 별 text 추출 후 EDA 실행
