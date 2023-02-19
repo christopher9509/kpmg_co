@@ -51,7 +51,7 @@
 (5) 공시 데이터 사업 요약 모델
 - 사용 모델 : t5 based pretrained model (https://huggingface.co/eenzeenee/t5-base-korean-summarization)
 - Input : KeyBert로 뽑힌 클러스터의 키워드 + 클러스터 내 공시 텍스트 전체
-- Output : 클러스터별 요약문
+- Output : 공시 텍스트 클러스터별 요약문
 
 ## Evaluation
 - Metric: Accuracy, F1 score
