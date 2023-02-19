@@ -49,12 +49,18 @@
 - KeyBERT : 각 클러스터를 대표하는 키워드 및 상위 키워드 중 ESG corpus 내 키워드가 있을 경우 corpus 키워드를 뽑음
 - Output : modeling_keyword, corpus_keyword
 
-(4) ESG corpus 구축 모델
+(4) Word2Vec 기반 키워드 임베딩
+- 사용 모델 : Word2Vec
+- 공시 키워드 워드 임베딩 : ESG corpus에 있는 단어들을 기반으로, 공시 데이터에서 추출된 문장마다 매핑, 문장과 키워드를 Word2Vec model에 input으로 하여 매핑된 keyword들의 embedding space 상 분포 벡터 도출
+- 뉴스 키워드 워드 임베딩 : 뉴스 별 cluster에 있는 corpus keyword를 기반, 해당 키워드의 뉴스와 키워드를 Word2Vec model에 input으로 하여 매핑된 keyword들의 embedding space 상 분포 벡터 도출
+- 시각화 : matplotlib scatter plot
+
+(5) ESG corpus 구축 모델
 - 사용 모델 : Soynlp 명사추출기 (https://github.com/lovit/soynlp) + tf-idf
 - Input : E/S/G별 지속가능보고서 요약본 추출 텍스트 (기업 통합)
 - Output : E/S/G 공시 텍스트에서 추출된 명사 중 tf-idf가 높은 명사 순으로 정렬
 
-(5) 공시 데이터 사업 요약 모델
+(6) 공시 데이터 사업 요약 모델
 - 사용 모델 : t5 based pretrained model (https://huggingface.co/eenzeenee/t5-base-korean-summarization)
 - Input : KeyBert로 뽑힌 클러스터의 키워드 + 클러스터 내 공시 텍스트 전체
 - Output : 공시 텍스트 클러스터별 요약문
