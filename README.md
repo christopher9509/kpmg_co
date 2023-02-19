@@ -43,7 +43,7 @@
 - KeyBERT : 각 클러스터를 대표하는 키워드 및 상위 키워드 중 ESG corpus 내 키워드가 있을 경우 corpus 키워드를 뽑음
 - Output : modeling_keyword, corpus_keyword
 
-(4) 코퍼스 구축 모델
+(4) ESG corpus 구축 모델
 - 사용 모델 : Soynlp 명사추출기 (https://github.com/lovit/soynlp) + tf-idf
 - Input : E/S/G별 지속가능보고서 요약본 추출 텍스트 (기업 통합)
 - Output : E/S/G 공시 텍스트에서 추출된 명사 중 tf-idf가 높은 명사 순으로 정렬
