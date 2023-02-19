@@ -10,17 +10,38 @@
 
 ## Data
 - target companies = (1) 신세계 (2) 현대홈쇼핑 (3) 롯데하이마트 (4) GS리테일 (5) LG생활건강
-- target domain = 
+- target domain = 도매 및 소매업
 
 (1) News data
 - Period :  20.01.01 ~ 23.01.15
 - train/val : 20.01.01 ~ 21.12.31 / 22.01.01 ~ 23.01. 15
-- Samples : Total #
+- Samples : Total # 156,449개 기사
 - From : naver news crawling
 
 (2) ESG report(지속가능경영보고서 요약본)
 - Period : 2022년 공시, 세부 일자는 기업마다 상이.
 - From : 기업공시채널 https://kind.krx.co.kr/
+
+## Model
+
+(1) ESG 분류 모델
+- 사용 모델 : KoBERT(https://huggingface.co/skt/kobert-base-v1)
+- Label 4개(None/E/S/G)에 대해 Fine-tuning 진행
+- Input : News title + Contents
+- Output : 4가지 label에 대한 확률값
+
+(2) ESG 감성분석 모델
+- 사용 모델 : KoBERT(https://huggingface.co/skt/kobert-base-v1)
+- Label 2개(Positive/Negative)에 대해 Fine-tuning 진행
+- Input : News title + Contents
+- Output : 긍정/부정 2가지 label에 대한 확률값 + Sentiment score
+
+(3) 키워드 추출 모델
+- 사용 모델 및 방법론 : KeyBERT + Two-step clustering
+- 첫 번째 클러스터링 : 중복 기사들에 대해 제거하기 위한 클러스터링(cosine distance 기반)
+- 두 번째 클러스터링 : 유사한 기사들 간 군집화(최적 K-cluster를 도출하기 위해 실루엣 계수 사용)
+- KeyBERT : 각 클러스터를 대표하는 키워드 및 상위 키워드 중 ESG corpus 내 키워드가 있을 경우 corpus 키워드를 뽑음
+- Output : modeling_keyword, corpus_keyword
 
 ## Evaluation
 - Metric: Accuracy, F1 score
