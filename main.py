@@ -10,8 +10,13 @@ import datetime
 from dateutil.rrule import rrule, DAILY
 from PIL import Image
 from sklearn.decomposition import PCA
+import matplotlib as mpl
 
 st.set_page_config(page_title="비정형 ESG 통합 분석 플랫폼", page_icon=None, layout="wide", initial_sidebar_state="expanded", menu_items=None)
+
+# 한글 깨짐 보정
+mpl.rcParams['axes.unicode_minus'] = False
+
 
 # with open('style.css') as f:
 #     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -69,7 +74,8 @@ p_style = ("text-align:left; padding: 0px; font-family: Noto Sans KR; font-size:
 sub_style = ("text-align:center; padding: 0px; font-family: arial black; font-size: 110%; font-weight: 900; line-height: 1.5")
 cols = ['#58C558', '#E9C544', '#475EAA']
 col_vs = ['#BAEBBA', '#F3E5B1', '#B3BEE0']
-col_show = ['#FF7A00', '#ECE6E0', '#FDBC81']
+col_show = ['#58C558', '#475EAA', '#E9C544']
+col_ia = '#ECE6E0'
 #####
 
 ##### Logo #####
@@ -224,6 +230,13 @@ n_show_s = n_show[n_show['pre_label']==2][['date', 'abstract', 'sent_range']].co
 n_show_s = n_show_s.sort_values('date', ascending = False).reset_index(drop = True)
 n_show_g = n_show[n_show['pre_label']==3][['date', 'abstract', 'sent_range']].copy()
 n_show_g = n_show_g.sort_values('date', ascending = False).reset_index(drop = True)
+# 뉴스 유사 키워드 데이터
+n_sim_list = os.listdir(path2 + 'news_similarity_output/final_test_hyun_analysis.csv')
+n_sim = {}
+for s in n_sim_list:
+    globals()[f'n_{esg_idx[s]}_sim_vocab'] = np.load(path2 + 'news_similarity_output/final_test_hyun_analysis.csv/'+s+'/vocabs.npy')
+    globals()[f'n_{esg_idx[s]}_sim_vec'] = np.load(path2 + 'news_similarity_output/final_test_hyun_analysis.csv/'+s+'/word_vectors.npy')
+    n_sim[esg_idx[s]] = [globals()[f'n_{esg_idx[s]}_sim_vocab'], globals()[f'n_{esg_idx[s]}_sim_vec']]
 
 # 산업군 데이터셋
 news_tot = pd.read_csv(path2 + f'final_merge.csv')
@@ -254,76 +267,42 @@ try:
     n_vs_show_s = n_vs_show_s.sort_values('date', ascending = False).reset_index(drop = True)
     n_vs_show_g = n_vs_show[n_vs_show['pre_label']==3][['date', 'abstract', 'sent_range']].copy()
     n_vs_show_g = n_vs_show_g.sort_values('date', ascending = False).reset_index(drop = True)
+
+    # n_vs_sim : 경쟁사 키워드 유사도 데이터
+    n_vs_sim_list = os.listdir(path2 + f'news_similarity_output/final_test_{comp[vs_com]}_analysis.csv')
+    n_vs_sim = {}
+    for s in n_sim_list:
+        globals()[f'n_vs_{esg_idx[s]}_sim_vocab'] = np.load(path2 + f'news_similarity_output/final_test_{comp[vs_com]}_analysis.csv/'+s+'/vocabs.npy')
+        globals()[f'n_vs_{esg_idx[s]}_sim_vec'] = np.load(path2 + f'news_similarity_output/final_test_{comp[vs_com]}_analysis.csv/'+s+'/word_vectors.npy')
+        n_vs_sim[esg_idx[s]] = [globals()[f'n_vs_{esg_idx[s]}_sim_vocab'], globals()[f'n_vs_{esg_idx[s]}_sim_vec']]
     #####
 except:
     pass
 
+
 ##### 자사분석 - 공시분석 #####
 try:
-    with o_tab_e:
-        if d_e.empty:
-            st.write(f"<h5 style='{p_style}'><br>E와 관련된 활동 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            ce0, ce1, ce2 = st.columns([1,1,1])
-            ce3, ce4, ce5 = st.columns([1,1,1])
-            for i in range(6):
-                if len(d_e)>i:
-                    globals()[f'ce{i}'].write(f"<h5 style='{b_style}'><strong>{d_e.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'ce{i}'].write(f"<h5 style='{p_style}'><br>{d_e.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-        with st.expander("더보기"):
-            left = len(d_e)-6
-            for i in range(left//3+1):
-                globals()[f"ce_{i+2}0"], globals()[f"ce_{i+2}1"], globals()[f"ce_{i+2}2"] = st.columns([1,1,1])
-            for i, item in d_e.iterrows():
-                if i<6:
-                    continue
-                else:
-                    globals()[f'ce_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{d_e.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'ce_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{d_e.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-
-    with o_tab_s:
-        if d_s.empty:
-            st.write(f"<h5 style='{p_style}'><br>S와 관련된 활동 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            cs0, cs1, cs2 = st.columns([1,1,1])
-            cs3, cs4, cs5 = st.columns([1,1,1])
-            for i in range(6):
-                if len(d_s)>i:
-                    globals()[f'cs{i}'].write(f"<h5 style='{b_style}'><strong>{d_s.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'cs{i}'].write(f"<h5 style='{p_style}'><br>{d_s.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-        with st.expander("더보기"):
-            left = len(d_s)-6
-            for i in range((left//3)+1):
-                globals()[f"cs_{i+2}0"], globals()[f"cs_{i+2}1"], globals()[f"cs_{i+2}2"] = st.columns([1,1,1])
-            for i, item in d_s.iterrows():
-                if i<6:
-                    continue
-                else:
-                    globals()[f'cs_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{d_s.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'cs_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{d_s.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-
-    with o_tab_g:
-        if d_g.empty:
-            st.write(f"<h5 style='{p_style}'><br>G와 관련된 활동 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            cg0, cg1, cg2 = st.columns([1,1,1])
-            cg3, cg4, cg5 = st.columns([1,1,1])
-            for i in range(6):
-                if len(d_g)>i:
-                    globals()[f'cg{i}'].write(f"<h5 style='{b_style}'><strong>{d_g.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'cg{i}'].write(f"<h5 style='{p_style}'><br>{d_g.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-        with st.expander("더보기"):
-            left = len(d_g)-6
-            for i in range(left//3+1):
-                globals()[f"cg_{i+2}0"], globals()[f"cg_{i+2}1"], globals()[f"cg_{i+2}2"] = st.columns([1,1,1])
-            for i, item in d_g.iterrows():
-                if i<6:
-                    continue
-                else:
-                    globals()[f'cg_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{d_g.iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
-                    globals()[f'cg_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{d_g.iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
-        
-
+    for j, t in zip(range(3),[o_tab_e, o_tab_s, o_tab_g]):
+        with t:
+            if globals()[f'd_{esg[j].lower()}'].empty:
+                st.write(f"<h5 style='{p_style}'><br>{esg[j]}와 관련된 활동 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
+            else:
+                globals()[f'c{esg[j].lower()}0'], globals()[f'c{esg[j].lower()}1'], globals()[f'c{esg[j].lower()}2'] = st.columns([1,1,1])
+                globals()[f'c{esg[j].lower()}3'], globals()[f'c{esg[j].lower()}4'], globals()[f'c{esg[j].lower()}5'] = st.columns([1,1,1])
+                for i in range(6):
+                    if len(globals()[f'd_{esg[j].lower()}'])>i:
+                        globals()[f'c{esg[j].lower()}{i}'].write(f"<h5 style='{b_style}'><strong>{globals()[f'd_{esg[j].lower()}'].iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                        globals()[f'c{esg[j].lower()}{i}'].write(f"<h5 style='{p_style}'><br>{globals()[f'd_{esg[j].lower()}'].iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
+            with st.expander("더보기"):
+                left = len(globals()[f'd_{esg[j].lower()}'])-6
+                for i in range(left//3+1):
+                    globals()[f"c{esg[j].lower()}_{i+2}0"], globals()[f"c{esg[j].lower()}_{i+2}1"], globals()[f"c{esg[j].lower()}_{i+2}2"] = st.columns([1,1,1])
+                for i, item in globals()[f'd_{esg[j].lower()}'].iterrows():
+                    if i<6:
+                        continue
+                    else:
+                        globals()[f'c{esg[j].lower()}_{i//3}{i%3}'].write(f"<h5 style='{b_style}'><strong>{globals()[f'd_{esg[j].lower()}'].iloc[i,0]}</strong></h5>", unsafe_allow_html = True)
+                        globals()[f'c{esg[j].lower()}_{i//3}{i%3}'].write(f"<h5 style='{p_style}'><br>{globals()[f'd_{esg[j].lower()}'].iloc[i,1]}<br><br></h5>", unsafe_allow_html = True)
         
     with c11:
         urls_df = pd.read_csv(path2+'report_url.csv', encoding = 'cp949')
@@ -365,11 +344,10 @@ try:
         d_key_max = [x for j, x in enumerate(esg_sp) if j in idx]
         d_key_max = ', '.join(d_key_max)
         fig, ax = plt.subplots(figsize=(5, 3))
-        ax.pie(d_keys, labels = esg, radius = 0.5, colors = cols, autopct='%.1f%%', textprops = {'size':5})
-
+        ax.pie(d_keys, labels = [esg[i]+': '+str(d_keys[i])+'가지' for i in range(3)], colors = cols, autopct='%.1f%%', textprops = {'size':6})
         st.pyplot(fig)
-        leg = "   ".join(leg)
-        st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
+        # leg = "   ".join(leg)
+        # st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
         st.write(f"<h5 style='{p_style}'>{com} 2021 지속가능경영보고서, {dis[com]} 기준 <br><strong>{d_key_max}</strong> 관련 키워드가 가장 많이 추출되었습니다.<br><br></h5>", unsafe_allow_html = True)
 
     # 공시 esg 키워드 보여주는 표
@@ -386,15 +364,14 @@ try:
     with c23:
         x = np.arange(3)
         n_keys = [n_e['model_keyword'].nunique(), n_s['model_keyword'].nunique(), n_g['model_keyword'].nunique()]
-        leg = [i + ': '+str(j)+'가지' for i, j in zip(esg, n_keys)]
-        leg.append('전체: '+str(sum(n_keys))+'가지')
         idx = [i for i, x in enumerate(n_keys) if x == max(n_keys)]
         n_key_max = [x for j, x in enumerate(esg_sp) if j in idx]
         n_key_max = ', '.join(n_key_max)
         fig, ax = plt.subplots()
-        ax.bar(x, n_keys, color = cols)
+        for i in range(3):
+            ax.bar(esg[i], n_keys[i], color = cols[i])
         plt.xticks(x, esg, fontsize = 15)
-        plt.yticks(range(max(n_keys)+1))
+        plt.yticks(range(0,max(n_keys)+1,5))
         st.write(f"<h5 style='{sub_style}'><strong>ESG 키워드 분포도</strong></h5>", unsafe_allow_html = True)
         for i, v in enumerate(x):
             plt.text(v, n_keys[i], str(n_keys[i]),
@@ -402,9 +379,8 @@ try:
                 color="black",
                 horizontalalignment='center',
                 verticalalignment='bottom')
+        ax.legend([esg[i]+': '+f'{(n_keys[i]/sum(n_keys)):.2f}'+'%' for i in range(3)])
         st.pyplot(fig)
-        leg = "   ".join(leg)
-        st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
         st.write(f"<h5 style='{p_style}'>{s_date} - {e_date} 동안 {com} 뉴스에서 <br><strong>{n_key_max}</strong> 관련 키워드가 가장 많이 추출되었습니다.<br><br></h5>", unsafe_allow_html = True)
 
     with c24:
@@ -421,51 +397,27 @@ try:
         ax.plot(dates, n_key_per_date["n_s"], label = 'S', color = cols[1])
         ax.plot(dates, n_key_per_date["n_g"], label = 'G', color = cols[2])
         plt.xticks(fontsize=10, rotation = 45)
-        # plt.xticks(fontsize=7)
         plt.ylabel('count')
         plt.legend()
         st.pyplot(fig)
         st.write('차트 설명 추가')
         # st.write(f"<h5 style='{p_style}'>{s_date} - {e_date} 동안 {com} 뉴스에서 <br><strong>{n_key_max}</strong> 관련 키워드가 가장 많이 추출되었습니다.<br><br></h5>", unsafe_allow_html = True)
 
-    with c251:
-        st.write(f"<h5 style='{sub_style}'><br>E<br><br></h5>", unsafe_allow_html = True)
-        n_e_dup = n_e['model_keyword'].value_counts().to_dict()
-        n_e_k = n_e.copy()
-        n_e_k['dup_key_cnt'] = n_e_k['model_keyword'].map(n_e_dup)
-        n_e_k = n_e_k.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-        if n_e_k.empty:
-            st.write(f"<h5 style='{p_style}'><br>해당 기간에 <strong>E</strong>와 관련된 뉴스 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            st.write(n_e_k[['model_keyword', 'corpus_keyword']])
-
-    with c252:
-        st.write(f"<h5 style='{sub_style}'><br>S<br><br></h5>", unsafe_allow_html = True)
-        n_s_dup = n_s['model_keyword'].value_counts().to_dict()
-        n_s_k = n_s.copy()
-        n_s_k['dup_key_cnt'] = n_s_k['model_keyword'].map(n_s_dup)
-        n_s_k = n_s_k.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-        if n_s_k.empty:
-            st.write(f"<h5 style='{p_style}'><br>해당 기간에 <strong>S</strong>와 관련된 뉴스 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            st.write(n_s_k[['model_keyword', 'corpus_keyword']])
-
-    with c253:
-        st.write(f"<h5 style='{sub_style}'><br>G<br><br></h5>", unsafe_allow_html = True)
-        n_g_dup = n_g['model_keyword'].value_counts().to_dict()
-        n_g_k = n_g.copy()
-        n_g_k['dup_key_cnt'] = n_g_k['model_keyword'].map(n_g_dup)
-        n_g_k = n_g_k.drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
-        if n_g_k.empty:
-            st.write(f"<h5 style='{p_style}'>해당 기간에 <strong>G</strong>와 관련된 뉴스 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
-        else:
-            st.write(n_g_k[['model_keyword', 'corpus_keyword']])
-
+    for i, c in zip(range(3),[c251, c252, c253]):
+        with c:
+            st.write(f"<h5 style='{sub_style}'><br>{esg[i]}<br><br></h5>", unsafe_allow_html = True)
+            globals()[f'n_{esg[i].lower()}_dup'] = globals()[f'n_{esg[i].lower()}']['model_keyword'].value_counts().to_dict()
+            globals()[f'n_{esg[i].lower()}_k'] = globals()[f'n_{esg[i].lower()}'].copy()
+            globals()[f'n_{esg[i].lower()}_k']['dup_key_cnt'] = globals()[f'n_{esg[i].lower()}_k']['model_keyword'].map(globals()[f'n_{esg[i].lower()}_dup'])
+            globals()[f'n_{esg[i].lower()}_k'] = globals()[f'n_{esg[i].lower()}_k'].drop_duplicates('model_keyword').sort_values('dup_key_cnt', ascending = False).reset_index(drop = True)
+            if globals()[f'n_{esg[i].lower()}_k'].empty:
+                st.write(f"<h5 style='{p_style}'><br>해당 기간에 <strong>{esg[i]}</strong>와 관련된 뉴스 키워드가 없습니다.<br><br></h5>", unsafe_allow_html = True)
+            else:
+                st.write(globals()[f'n_{esg[i].lower()}_k'][['model_keyword', 'corpus_keyword']])
+    
     with c26:
         st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 비율</h5>", unsafe_allow_html = True)
         n_cnt = [len(n_e), len(n_s), len(n_g)]
-        leg = [i + ': '+str(j)+'개' for i, j in zip(esg, n_cnt)]
-        leg.append('전체: '+str(sum(n_cnt))+'개')
         try:
             n_cnt = [i/len(n)*100 for i in n_cnt]
         except:
@@ -473,11 +425,9 @@ try:
         idx = [i for i, x in enumerate(n_cnt) if x == max(n_cnt)]
         n_max = [x for j, x in enumerate(esg_sp) if j in idx]
         n_max = ', '.join(n_max)
-        fig, ax = plt.subplots()
-        ax.pie(n_cnt, labels = esg, colors = cols, radius = 1, autopct='%.1f%%', textprops = {'size':10})
+        fig, ax = plt.subplots(figsize=(5, 3))
+        ax.pie(n_cnt, labels = [esg[i]+': '+f'{(n_cnt[i]*len(n)/100):.0f}'+'개' for i in range(3)], colors = cols, autopct='%.1f%%', textprops = {'size':6})
         st.pyplot(fig)
-        leg = "   ".join(leg)
-        st.write(f"<center>{leg}</center><br>", unsafe_allow_html = True)
         st.write(f"<h5 style='{p_style}'>{s_date} - {e_date} 동안 {com}은 <br><strong>{n_max}</strong> 관련 활동을 가장 활발히 했습니다.<br><br></h5>", unsafe_allow_html = True)
 
     with c27:
@@ -499,7 +449,7 @@ try:
         # plt.legend()
         st.pyplot(fig)
         with st.expander("감성분석 산정 기준"):
-            st.write("kobert를 esg 긍/부정 감성 분류 task로 fine-tuning한 모델을 사용하여 도출한 해당 날짜의 뉴스에 대한 감성점수입니다.\n\n강한/보통/약한/중립 긍부정 나누는 기준은 다음과 같습니다:\n- sentiment score를 분위수 4개로 나누어서 4개의 그룹으로 나눔\n- 구체적으로 (1) 0.5 이하 : 중립, (2) 0.5 초과 1.5 이하 : 약한, (3) 1.5 초과 2.5 이하 : 보통, (4) 2.5 초과 : 강한 으로 판단\n- label이 1일 경우, 긍정, label이 0일 경우 부정으로 판단함")
+            st.write("kobert를 esg 긍/부정 감성 분류 task로 fine-tuning한 모델을 사용하여 도출한 해당 날짜의 뉴스에 대한 감성점수입니다.\n\n강한/보통/약한 긍·부정 및 중립을 나누는 기준:\n- label이 1일 경우, 긍정, label이 0일 경우 부정으로 분류\n- sentiment score를 분위수 4개로 나누어서 4개의 그룹으로 분류\n  - (1) 0.5 이하 : 중립, (2) 0.5 초과 1.5 이하 : 약한, (3) 1.5 초과 2.5 이하 : 보통, (4) 2.5 초과 : 강한 으로 분류")
 
     c283.metric('Environment', "  "+str(len(n_show_e))+"  ")
     c284.metric('Social', "  "+str(len(n_show_s))+"  ")
@@ -574,7 +524,7 @@ try:
                 ax.annotate(v, xy=(xs[i], ys[i]))
         plt.xlim(-0.06,0.06)
         plt.ylim(-0.06,0.06)
-        plt.legend(loc='lower left')
+        plt.legend(loc='lower left', fontsize=8)
         st.pyplot(fig)
 
     for c, i in zip([c341, c342, c343], [com, vs_com, '전체']):
@@ -582,13 +532,13 @@ try:
             st.write(f"<h5 style='{p_style}'><center><strong>{i} TOP 키워드</strong></center><br></h5>", unsafe_allow_html = True)
             if i == '전체':
                 top_keywords = d_tot.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']].fillna('-'))
             elif i == com:
                 top_keywords = d.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']].fillna('-'))
             else:
                 top_keywords = d_vs.groupby('label')['keyword'].unique().apply(lambda x: pd.Series(x).drop_duplicates().head(3))
-                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']])
+                st.dataframe(pd.DataFrame(top_keywords.to_dict()).transpose()[['e','s','g']].fillna('-'))
 
 
     with c35:
@@ -606,10 +556,10 @@ try:
         fig, ax = plt.subplots()
         x = [0,1,2,0.2,1.2,2.2,0.4,1.4,2.4]
         y = [n_e['model_keyword'].nunique(),n_s['model_keyword'].nunique(),n_g['model_keyword'].nunique(),n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4,n_vs_e['model_keyword'].nunique(), n_vs_s['model_keyword'].nunique(),n_vs_g['model_keyword'].nunique()]
-        ax.bar(0, n_e['model_keyword'].nunique(), color = cols[0], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[0])
-        ax.bar(1, n_s['model_keyword'].nunique(), color = cols[1], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[1])
-        ax.bar(2, n_g['model_keyword'].nunique(), color = cols[2], width=0.2, align='center', label='Hyundai\nHome shopping'.upper()+', '+esg[2])
-        ax.bar([0.2,1.2,2.2], [n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4], color = col_show[1], width=0.2, align='center', label='IA\n(Industrial Average)')
+        ax.bar(0, n_e['model_keyword'].nunique(), color = cols[0], width=0.2, align='center', label='Hyundai Home shopping'.upper()+', '+esg[0])
+        ax.bar(1, n_s['model_keyword'].nunique(), color = cols[1], width=0.2, align='center', label='Hyundai Home shopping'.upper()+', '+esg[1])
+        ax.bar(2, n_g['model_keyword'].nunique(), color = cols[2], width=0.2, align='center', label='Hyundai Home shopping'.upper()+', '+esg[2])
+        ax.bar([0.2,1.2,2.2], [n_tot[n_tot['pre_label']==1]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==2]['model_keyword'].nunique()/4, n_tot[n_tot['pre_label']==3]['model_keyword'].nunique()/4], color = col_ia, width=0.2, align='center', label='IA (Industrial Average)')
         ax.bar(0.4, n_vs_e['model_keyword'].nunique(), color = col_vs[0], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[0])
         ax.bar(1.4, n_vs_s['model_keyword'].nunique(), color = col_vs[1], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[1])
         ax.bar(2.4, n_vs_g['model_keyword'].nunique(), color = col_vs[2], width=0.2, align='center', label=comp[vs_com].upper()+', '+esg[2])
@@ -621,12 +571,38 @@ try:
                 color="black",
                 horizontalalignment='center',
                 verticalalignment='bottom')
-        plt.legend()
+        plt.legend(fontsize = 9)
         st.pyplot(fig)
         st.write(f"<h5 style='{c_style}'>각 기업의 ESG별 뉴스 키워드 가짓수 분포와 산업 평균 키워드 가짓수를 나타낸 차트입니다.<br></h5>", unsafe_allow_html = True)
 
     with c45:
         st.write(f"<h5 style='{sub_style}'><strong>ESG 유사 키워드 분포<br></h5>", unsafe_allow_html = True)
+        fig, ax = plt.subplots()
+        for k, v in n_sim.items():
+            vocabs = v[0]
+            word_vectors_list = v[1]
+            pca = PCA(n_components=2)
+            xys = pca.fit_transform(word_vectors_list)
+            xs = xys[:,0]
+            ys = xys[:,1]
+            ax.scatter(xs, ys, marker = 'o', c=cols[k], label = f'{comp[com]}'.replace('_',' ').upper()+', ' +esg[k])
+            for i, v in enumerate(vocabs):
+                ax.annotate(v, xy=(xs[i], ys[i]))
+        for k, v in n_vs_sim.items():
+            vocabs = v[0]
+            word_vectors_list = v[1]
+            pca = PCA(n_components=2)
+            xys = pca.fit_transform(word_vectors_list)
+            xs = xys[:,0]
+            ys = xys[:,1]
+            ax.scatter(xs, ys, marker = 'o', c=col_vs[k], label = f'{comp[vs_com]}'.upper()+', ' +esg[k])
+            for i, v in enumerate(vocabs):
+                ax.annotate(v, xy=(xs[i], ys[i]))
+        plt.xlim(-0.2,0.4)
+        plt.ylim(-0.1,0.15)
+        plt.legend(loc='upper right', fontsize = 8)
+        st.pyplot(fig)
+
 
     keyword_show = [com, vs_com, '전체']
     for c, i in zip([c50, c51, c52], range(3)):
@@ -669,20 +645,33 @@ try:
     with c61:
         st.write(f"<h5 style='{sub_style}'><strong>ESG 뉴스 비율<br></h5>", unsafe_allow_html = True)
         e_news = [len(n_e), len(n_tot[n_tot['pre_label']==1]), len(n_vs_e)]
+        e_news_p = e_news.copy()
         s_news = [len(n_s), len(n_tot[n_tot['pre_label']== 2]), len(n_vs_s)]
+        s_news_p = s_news.copy()
         g_news = [len(n_g), len(n_tot[n_tot['pre_label']==3]), len(n_vs_g)]
+        g_news_p = g_news.copy()
+        for i in range(3):
+            for p in [e_news_p, s_news_p, g_news_p]:
+                try:
+                    p[i] = p[i]/(e_news[i]+s_news[i]+g_news[i])*100
+                except:
+                    p[i] = 0
+
         name = ['Hyundai\nHome shopping'.upper(), 'IA\n(Industrial Average)', comp[vs_com].upper()]
         x = name + name + name
-        y = e_news + [x+y for x,y in zip(e_news, s_news)] + [x+y for x,y in zip([x+y for x,y in zip(e_news, s_news)], g_news)]
-        actual_y = e_news + s_news + g_news
+        y = e_news_p + [x+y for x,y in zip(e_news_p, s_news_p)] + [x+y for x,y in zip([x+y for x,y in zip(e_news_p, s_news_p)], g_news_p)]
 
+        actual_y = e_news_p + s_news_p + g_news_p
         fig, ax = plt.subplots()
-        plt.bar(name, e_news, color = cols[0]) 
-        plt.bar(name, s_news, bottom=e_news, color = cols[1])
-        plt.bar(name, g_news, bottom=np.array(s_news)+np.array(e_news), color = cols[2])
+        plt.bar(name, e_news_p, color = cols[0]) 
+        plt.bar(name, s_news_p, bottom=e_news_p, color = cols[1])
+        plt.bar(name, g_news_p, bottom=np.array(s_news_p)+np.array(e_news_p), color = cols[2])
         plt.legend(esg)
+        plt.ylabel('%')
         for i, v in enumerate(x):
-            plt.text(v, y[i], str(actual_y[i]),
+            if actual_y[i]==0:
+                continue
+            plt.text(v, y[i], f'{actual_y[i]:.1f}'+'%',
                     fontsize=9,
                     color="black",
                     horizontalalignment='center',
@@ -695,20 +684,19 @@ try:
         dates = list(rrule(DAILY, dtstart=s_date, until=e_date))
         fig, ax = plt.subplots()
         n_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
-        ax.plot(dates, n.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[0])
+        ax.plot(dates, n.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[0], label = 'Hyundai Home Shopping')
         n_tot_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
-        ax.plot(dates, n_tot.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[1])
+        ax.plot(dates, n_tot.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[1], label = 'IA (Industrial Average)')
         n_vs_sent_per_date = pd.DataFrame({"date": dates}).set_index("date")
-        ax.plot(dates, n_vs.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[2])
+        ax.plot(dates, n_vs.groupby("date")["re_sent_score"].mean().reindex(dates, fill_value=0), color = col_show[2], label = comp[vs_com].upper())
         plt.xticks(fontsize=10, rotation = 45)
         plt.ylim(-5,5)
         plt.hlines(0, dates[0], dates[-1], color='black', linestyle='solid', linewidth=1)
-        # plt.xticks(fontsize=7)
         plt.ylabel('sentiment score')
-        # plt.legend()
+        plt.legend()
         st.pyplot(fig)
         with st.expander("감성분석 산정 기준"):
-            st.write("kobert를 esg 긍/부정 감성 분류 task로 fine-tuning한 모델을 사용하여 도출한 해당 날짜의 뉴스에 대한 감성점수입니다.\n\n강한/보통/약한/중립 긍부정 나누는 기준은 다음과 같습니다:\n- sentiment score를 분위수 4개로 나누어서 4개의 그룹으로 나눔\n- 구체적으로 (1) 0.5 이하 : 중립, (2) 0.5 초과 1.5 이하 : 약한, (3) 1.5 초과 2.5 이하 : 보통, (4) 2.5 초과 : 강한 으로 판단\n- label이 1일 경우, 긍정, label이 0일 경우 부정으로 판단함")
+            st.write("kobert를 esg 긍/부정 감성 분류 task로 fine-tuning한 모델을 사용하여 도출한 해당 날짜의 뉴스에 대한 감성점수입니다.\n\n강한/보통/약한 긍·부정 및 중립을 나누는 기준:\n- label이 1일 경우, 긍정, label이 0일 경우 부정으로 분류\n- sentiment score를 분위수 4개로 나누어서 4개의 그룹으로 분류\n  - (1) 0.5 이하 : 중립, (2) 0.5 초과 1.5 이하 : 약한, (3) 1.5 초과 2.5 이하 : 보통, (4) 2.5 초과 : 강한 으로 분류")
 
     c383.metric('Environment', "  "+str(len(n_vs_show_e))+"  ")
     c384.metric('Social', "  "+str(len(n_vs_show_s))+"  ")
