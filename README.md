@@ -6,6 +6,7 @@
 
 ## Main
 - 참여자 : 이수민, 김영진, 최윤정, 이금진
+- Result : 3rd prize🏆(https://news.mt.co.kr/mtview.php?no=2023022417025420783)
 
 ## Project
 - Title: 비정형 ESG 통합 분석 플랫폼
