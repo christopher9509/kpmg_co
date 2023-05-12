@@ -12,6 +12,9 @@
 - Category: Classification, News data, NLP, data analysis
 - Tool Used: python, pandas, sklearn, pytorch, streamlit, pigma
 
+## Result
+- 3rd prize
+
 ## Data
 - target companies = (1) 신세계 (2) 현대홈쇼핑 (3) 롯데하이마트 (4) GS리테일 (5) LG생활건강
 - target domain = 도매 및 소매업
